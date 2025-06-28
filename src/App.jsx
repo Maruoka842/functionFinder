@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { show_extended_sequence } from './recurrence.js';
 
 function App() {
   const [sequence, setSequence] = useState('');
+  const [degree, setDegree] = useState('1');
+  const [extendLength, setExtendLength] = useState('20');
   const [result, setResult] = useState('');
   const mod = 1000003;
 
@@ -72,7 +75,7 @@ function App() {
 
   return (
     <div className="container mt-5">
-      <h1 className="mb-4">Rational Function Finder</h1>
+      <h1 className="mb-4">Rational Function Finder and Sequence Extender</h1>
       <div className="mb-3">
         <label htmlFor="sequenceInput" className="form-label">Enter a sequence (comma-separated):</label>
         <textarea
@@ -83,6 +86,28 @@ function App() {
           onChange={(e) => setSequence(e.target.value)}
           placeholder="e.g., 1, 1, 2, 3, 5, 8"
         ></textarea>
+      </div>
+      <div className="row mb-3">
+        <div className="col">
+            <label htmlFor="degreeInput" className="form-label">Degree:</label>
+            <input
+                type="number"
+                className="form-control"
+                id="degreeInput"
+                value={degree}
+                onChange={(e) => setDegree(e.target.value)}
+            />
+        </div>
+        <div className="col">
+            <label htmlFor="extendLengthInput" className="form-label">Extend Length:</label>
+            <input
+                type="number"
+                className="form-control"
+                id="extendLengthInput"
+                value={extendLength}
+                onChange={(e) => setExtendLength(e.target.value)}
+            />
+        </div>
       </div>
       <button
         className="btn btn-primary"
@@ -99,6 +124,16 @@ function App() {
           }
 
           try {
+            const n = parseInt(extendLength, 10);
+            const d = parseInt(degree, 10);
+
+            if (isNaN(n) || isNaN(d)) {
+                setResult('Invalid input: Please enter valid numbers for degree and extend length.');
+                return;
+            }
+
+            const extendedSequenceResult = show_extended_sequence(n, terms, d);
+
             const factorial = [1];
             for (let i = 1; i < terms.length; i++) {
               factorial[i] = factorial[i - 1] * i % mod;
@@ -139,14 +174,14 @@ function App() {
                 .join(' ');
 
             setResult(
-              `Ordinary GF:\n(${polyToString(A1)}) / (${polyToString(B1)})`
+              `Ordinary GF:\n(${polyToString(A1)}) / (${polyToString(B1)})\n\n${extendedSequenceResult}`
             );
           } catch (e) {
             setResult('Error: ' + e.message);
           }
         }}
       >
-        Find Function
+        Find Function and Extend Sequence
       </button>
       {result && (
         <div className="alert alert-info mt-4" role="alert">
@@ -158,3 +193,4 @@ function App() {
 }
 
 export default App;
+
