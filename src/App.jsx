@@ -16,14 +16,13 @@ function App() {
   function modinv(a) {
     return pow(a, mod - 2);
   }
+
   const findRationalFunction = (terms) => {
     if (terms.some(isNaN)) {
-      setResult('Invalid input: Please enter a comma-separated list of numbers.');
-      return null;
+      return "Invalid input: Please enter a comma-separated list of numbers.";
     }
     if (terms.length < 4 || terms.length % 2 !== 0) {
-      setResult('Invalid input: Please enter an even number of terms (at least 4).');
-      return null;
+      return "Invalid input: Please enter an even number of terms (at least 4).";
     }
     const N = Math.floor(terms.length / 2);
     const size = 2 * N + 1;
@@ -70,12 +69,52 @@ function App() {
     }
     A1.length = N;
     B1.length = N + 1;
-    return { A1, B1 };
+    
+    const polyToString = (coeffs) =>
+      coeffs
+        .map((c, i) => {
+          if (c === 0) return null;
+          const sign = c < 0 ? '- ' : i === 0 ? '' : '+ ';
+          const val = Math.abs(c);
+          const term = i === 0 ? `${val}` : i === 1 ? `${val}x` : `${val}x^${i}`;
+          return `${sign}${term}`;
+        })
+        .filter(Boolean)
+        .join(' ');
+
+    return `Ordinary GF:\n(${polyToString(A1)}) / (${polyToString(B1)})`;
+  };
+
+  const handleFindAll = () => {
+    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(Number);
+    if (terms.some(isNaN)) {
+      setResult('Invalid input: Please enter a comma-separated list of numbers.');
+      return;
+    }
+
+    try {
+      // Extended Sequence Part
+      const n = parseInt(extendLength, 10);
+      const d = parseInt(degree, 10);
+      if (isNaN(n) || isNaN(d)) {
+        setResult('Invalid input: Please enter valid numbers for degree and extend length.');
+        return;
+      }
+      const extendedSequenceResult = show_extended_sequence(n, terms, d);
+
+      // Rational Function Part
+      const rationalFunctionString = findRationalFunction(terms);
+
+      setResult(rationalFunctionString + "\n\n" + extendedSequenceResult);
+
+    } catch (e) {
+      setResult('Error: ' + e.message);
+    }
   };
 
   return (
     <div className="container mt-5">
-      <h1 className="mb-4">Rational Function Finder and Sequence Extender</h1>
+      <h1 className="mb-4">Sequence Tools</h1>
       <div className="mb-3">
         <label htmlFor="sequenceInput" className="form-label">Enter a sequence (comma-separated):</label>
         <textarea
@@ -87,6 +126,7 @@ function App() {
           placeholder="e.g., 1, 1, 2, 3, 5, 8"
         ></textarea>
       </div>
+
       <div className="row mb-3">
         <div className="col">
             <label htmlFor="degreeInput" className="form-label">Degree:</label>
@@ -109,80 +149,9 @@ function App() {
             />
         </div>
       </div>
-      <button
-        className="btn btn-primary"
-        onClick={() => {
-          const terms = sequence
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s !== '')
-            .map(Number);
+      <button className="btn btn-primary" onClick={handleFindAll}>Find Recurrence, Extend & Find OGF</button>
+      <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
-          if (terms.some(isNaN)) {
-            setResult('Invalid input: Please enter a comma-separated list of numbers.');
-            return;
-          }
-
-          try {
-            const n = parseInt(extendLength, 10);
-            const d = parseInt(degree, 10);
-
-            if (isNaN(n) || isNaN(d)) {
-                setResult('Invalid input: Please enter valid numbers for degree and extend length.');
-                return;
-            }
-
-            const extendedSequenceResult = show_extended_sequence(n, terms, d);
-
-            const factorial = [1];
-            for (let i = 1; i < terms.length; i++) {
-              factorial[i] = factorial[i - 1] * i % mod;
-            }
-
-            const termsEGF = terms.map((val, i) => val * modinv(factorial[i]) % mod);
-            const result1 = findRationalFunction(terms);
-            if (!result1) return;
-            const { A1, B1 } = result1;
-            const result2 = findRationalFunction(termsEGF);
-            if(!result2) return;
-            const { A1: A2, B1: B2 } = result2;
-            for (let i = 0; i < A2.length; i++) {
-              A2[i] = A2[i] * factorial[i] % mod;
-              B2[i] = B2[i] * factorial[i] % mod;
-            }
-            const polyToString = (coeffs) =>
-              coeffs
-                .map((c, i) => {
-                  if (c === 0) return null;
-                  const sign = c < 0 ? '- ' : i === 0 ? '' : '+ ';
-                  const val = Math.abs(c);
-                  const term = i === 0 ? `${val}` : i === 1 ? `${val}x` : `${val}x^${i}`;
-                  return `${sign}${term}`;
-                })
-                .filter(Boolean)
-                .join(' ');
-            const polyEGFToString = (coeffs) =>
-              coeffs
-                .map((c, i) => {
-                  if (c === 0) return null;
-                  const sign = c < 0 ? '- ' : i === 0 ? '' : '+ ';
-                  const val = Math.abs(c);
-                  const term = i === 0 ? `${val}` : i === 1 ? `${val}x` : `${val}x^${i}/${i}!`;
-                  return `${sign}${term}`;
-                })
-                .filter(Boolean)
-                .join(' ');
-
-            setResult(
-              `Ordinary GF:\n(${polyToString(A1)}) / (${polyToString(B1)})\n\n${extendedSequenceResult}`
-            );
-          } catch (e) {
-            setResult('Error: ' + e.message);
-          }
-        }}
-      >
-        Find Function and Extend Sequence
-      </button>
       {result && (
         <div className="alert alert-info mt-4" role="alert">
           <pre>{result}</pre>
@@ -193,4 +162,3 @@ function App() {
 }
 
 export default App;
-

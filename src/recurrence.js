@@ -136,7 +136,7 @@ function extended(n, coeffs, terms) {
                 t = (t * k) % mod;
             }
         }
-        //sum[d=0..deg] coeffs[0][d]m^d a[m]=sum[i=1..order,d=0..deg] -a[m-i]*(m-i)^d*coeffs[i][d]
+
         let denom = 0;
         let mpow = 1;
         for (let d = 0; d <= deg; ++d) {
@@ -154,48 +154,99 @@ export function show_extended_sequence(n, terms, degree) {
     if (terms.length === 0) {
         return `Extended Sequence:\n(No input terms)`;
     }
+
     const relation = find_recurrence_relation(terms, degree);
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
     const extended_terms = extended(n, coeffs, terms);
 
-    let info_string = `[ Found a recurrence relation ]\n- order ${order}\n- degree ${deg}\n- verified up to a(${last}) (number of non-trivial terms: ${nonTrivialTerms})\n`;
-
-    // 展開式生成： sum[i=0..order,d=0..deg] a[m-i]*m^d*w[i][d] = 0
-    // w[i][d] = coeffs[i][d] * (m-i)^d 展開時のm^d係数
+    let info_string = `polynomial recursive relation:\n`;
 
     function generate_w_string() {
         const w = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
         for (let i = 0; i <= order; i++) {
             for (let d = 0; d <= deg; d++) {
                 const c = coeffs[i][d];
+                if (c === 0) continue;
                 for (let k = 0; k <= d; k++) {
-                    const sign = ((d - k) % 2 === 0) ? 1 : mod - 1; // (-1)^{d-k} mod
+                    const sign = ((d - k) % 2 === 0) ? 1 : mod - 1;
                     const power = mod_pow(i, d - k);
                     const term = comb(d, k) * sign % mod * power % mod;
-                    w[i][k] = (w[i][k] + mod + (c * term % mod)) % mod;
+                    w[i][k] = (w[i][k] + (c * term % mod)) % mod;
                 }
             }
         }
 
-        let str = "Expanded recurrence (mod " + mod + "):\n";
+        let str = ``;
+        let equation_parts = [];
 
         for (let i = 0; i <= order; i++) {
-            for (let d = 0; d <= deg; d++) {
+            let poly_parts = [];
+            for (let d = deg; d >= 0; d--) {
                 let val = w[i][d];
-                if (val>mod/2) val -= mod;
                 if (val === 0) continue;
-                if (val == 1) {
-                    str += ` + m^${d} * a[m-${i}]`;
+                if (val > mod / 2) val -= mod;
+                if (val === 0) continue;
+
+                let term_str = "";
+                const is_negative = val < 0;
+                const abs_val = Math.abs(val);
+
+                term_str = is_negative ? " - " : " + ";
+
+                if (abs_val !== 1 || d === 0) {
+                    term_str += abs_val;
+                    if (d > 0) term_str += "*";
+                }
+                
+                if (d > 0) {
+                    term_str += (d === 1) ? "m" : `m^${d}`;
+                }
+                poly_parts.push(term_str);
+            }
+
+            if (poly_parts.length > 0) {
+                let poly_str = poly_parts.join("").trim();
+                if (poly_str.startsWith('+')) {
+                    poly_str = poly_str.substring(1).trim();
+                } else if (poly_str.startsWith('-')) {
+                    poly_str = "-" + poly_str.substring(1).trim();
+                }
+
+                const term_name = (i === 0) ? "a[m]" : `a[m-${i}]`;
+                let final_term_str = "";
+
+                if (poly_str === "1") {
+                    final_term_str = term_name;
+                } else if (poly_str === "-1") {
+                    final_term_str = `-${term_name}`;
                 } else {
-                    str += ` + ${val} * m^${d} * a[m-${i}]`;
+                    if (poly_parts.length > 1) {
+                        poly_str = `(${poly_str})`;
+                    }
+                    final_term_str = `${poly_str}*${term_name}`;
+                }
+                equation_parts.push(final_term_str);
+            }
+        }
+        
+        let final_equation = "";
+        for(let i = 0; i < equation_parts.length; i++) {
+            const part = equation_parts[i];
+            if (i === 0) {
+                final_equation = part;
+            } else {
+                if (part.startsWith('-')) {
+                    final_equation += ` - ${part.substring(1)}`;
+                } else {
+                    final_equation += ` + ${part}`;
                 }
             }
         }
-        str += " = 0\n";
+
+        str += final_equation + " = 0\n";
+        str += `verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
         return str;
     }
-
-    
     
     let result_string = `Extended Sequence:\n`;
     for (let i = 0; i < extended_terms.length; ++i) {
