@@ -190,8 +190,20 @@ function App() {
 
       {extendedSequence && (
         <div className="alert alert-secondary mt-4" role="alert">
-          <p>Extended Sequence:</p>
-          <pre>{extendedSequence}</pre>
+          {(() => {
+            const parts = extendedSequence.split('$');
+            if (parts.length === 3) {
+              return (
+                <>
+                  <pre>{parts[0]}</pre>
+                  <BlockMath math={parts[1]} />
+                  <pre>{parts[2]}</pre>
+                </>
+              );
+            } else {
+              return <pre>{extendedSequence}</pre>;
+            }
+          })()}
         </div>
       )}
     </div>

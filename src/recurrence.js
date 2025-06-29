@@ -158,11 +158,9 @@ export function show_extended_sequence(n, terms, degree) {
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
     const extended_terms = extended(n, coeffs, terms);
 
-    let info_string = `[ Found a polynomial recursive relation ]
-- verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})
-`;
+    let info_string = `[ Found a polynomial recursive relation ]\n- verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
 
-    function generate_w_string() {
+    function generate_katex_string() {
         const w = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
         for (let i = 0; i <= order; i++) {
             for (let d = 0; d <= deg; d++) {
@@ -177,7 +175,6 @@ export function show_extended_sequence(n, terms, degree) {
             }
         }
 
-        let str = "";
         let equation_parts = [];
 
         for (let i = 0; i <= order; i++) {
@@ -196,11 +193,11 @@ export function show_extended_sequence(n, terms, degree) {
 
                 if (abs_val !== 1 || d === 0) {
                     term_str += abs_val;
-                    if (d > 0) term_str += "*";
+                    if (d > 0) term_str += " ";
                 }
                 
                 if (d > 0) {
-                    term_str += (d === 1) ? "m" : `m^${d}`;
+                    term_str += (d === 1) ? "m" : `m^{${d}}`;
                 }
                 poly_parts.push(term_str);
             }
@@ -213,7 +210,7 @@ export function show_extended_sequence(n, terms, degree) {
                     poly_str = "-" + poly_str.substring(1).trim();
                 }
 
-                const term_name = (i === 0) ? "a[m]" : `a[m-${i}]`;
+                const term_name = (i === 0) ? "a_m" : `a_{m-${i}}`;
                 let final_term_str = "";
 
                 if (poly_str === "1") {
@@ -224,7 +221,7 @@ export function show_extended_sequence(n, terms, degree) {
                     if (poly_parts.length > 1) {
                         poly_str = `(${poly_str})`;
                     }
-                    final_term_str = `${poly_str}*${term_name}`;
+                    final_term_str = `${poly_str} ${term_name}`;
                 }
                 equation_parts.push(final_term_str);
             }
@@ -244,8 +241,7 @@ export function show_extended_sequence(n, terms, degree) {
             }
         }
 
-        str += final_equation + " = 0\n";
-        return str;
+        return final_equation + " = 0";
     }
     
     let result_string = `Extended Sequence:\n`;
@@ -256,5 +252,6 @@ export function show_extended_sequence(n, terms, degree) {
         }
         result_string += `${i}: ${val}\n`;
     }
-    return info_string + generate_w_string() + "\n" + result_string;
+    const katex_string = generate_katex_string();
+    return info_string + `$${katex_string}$` + "\n" + result_string;
 }
