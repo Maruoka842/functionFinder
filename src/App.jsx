@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { show_extended_sequence } from './recurrence.js';
+import 'katex/dist/katex.min.css';
+import { BlockMath } from 'react-katex';
 
 function App() {
   const [sequence, setSequence] = useState('');
   const [degree, setDegree] = useState('1');
   const [extendLength, setExtendLength] = useState('20');
-  const [result, setResult] = useState('');
+  const [error, setError] = useState('');
+  const [rationalFunction, setRationalFunction] = useState(null);
+  const [extendedSequence, setExtendedSequence] = useState('');
+
   const mod = 1000003;
 
   function pow(a, n) {
@@ -17,12 +22,34 @@ function App() {
     return pow(a, mod - 2);
   }
 
+  const polyToLatex = (coeffs) =>
+    coeffs
+      .map((c, i) => {
+        if (c === 0) return null;
+        const sign = c < 0 ? '-' : i === 0 ? '' : '+';
+        const val = Math.abs(c);
+        if (val === 0) return null;
+
+        let term;
+        if (i === 0) {
+          term = `${val}`;
+        } else if (i === 1) {
+          term = val === 1 ? 'x' : `${val}x`;
+        } else {
+          term = val === 1 ? `x^${i}` : `${val}x^${i}`;
+        }
+        return `${sign} ${term}`;
+      })
+      .filter(Boolean)
+      .join(' ')
+      .replace(/^\+ /, '');
+
   const findRationalFunction = (terms) => {
     if (terms.some(isNaN)) {
-      return "Invalid input: Please enter a comma-separated list of numbers.";
+      return { error: "Invalid input: Please enter a comma-separated list of numbers." };
     }
     if (terms.length < 4 || terms.length % 2 !== 0) {
-      return "Invalid input: Please enter an even number of terms (at least 4).";
+      return { error: "Invalid input: Please enter an even number of terms (at least 4)." };
     }
     const N = Math.floor(terms.length / 2);
     const size = 2 * N + 1;
@@ -69,46 +96,42 @@ function App() {
     }
     A1.length = N;
     B1.length = N + 1;
-    
-    const polyToString = (coeffs) =>
-      coeffs
-        .map((c, i) => {
-          if (c === 0) return null;
-          const sign = c < 0 ? '- ' : i === 0 ? '' : '+ ';
-          const val = Math.abs(c);
-          const term = i === 0 ? `${val}` : i === 1 ? `${val}x` : `${val}x^${i}`;
-          return `${sign}${term}`;
-        })
-        .filter(Boolean)
-        .join(' ');
 
-    return `Ordinary GF:\n(${polyToString(A1)}) / (${polyToString(B1)})`;
+    return { P_latex: polyToLatex(A1), Q_latex: polyToLatex(B1) };
   };
 
   const handleFindAll = () => {
+    setError('');
+    setRationalFunction(null);
+    setExtendedSequence('');
+
     const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(Number);
     if (terms.some(isNaN)) {
-      setResult('Invalid input: Please enter a comma-separated list of numbers.');
+      setError('Invalid input: Please enter a comma-separated list of numbers.');
       return;
     }
 
     try {
+      // Rational Function Part
+      const rationalFuncResult = findRationalFunction(terms);
+      if (rationalFuncResult.error) {
+        setError(rationalFuncResult.error);
+      } else {
+        setRationalFunction(rationalFuncResult);
+      }
+
       // Extended Sequence Part
       const n = parseInt(extendLength, 10);
       const d = parseInt(degree, 10);
       if (isNaN(n) || isNaN(d)) {
-        setResult('Invalid input: Please enter valid numbers for degree and extend length.');
+        setError('Invalid input: Please enter valid numbers for degree and extend length.');
         return;
       }
       const extendedSequenceResult = show_extended_sequence(n, terms, d);
-
-      // Rational Function Part
-      const rationalFunctionString = findRationalFunction(terms);
-
-      setResult(rationalFunctionString + "\n\n" + extendedSequenceResult);
+      setExtendedSequence(extendedSequenceResult);
 
     } catch (e) {
-      setResult('Error: ' + e.message);
+      setError('Error: ' + e.message);
     }
   };
 
@@ -152,9 +175,23 @@ function App() {
       <button className="btn btn-primary" onClick={handleFindAll}>Find Recurrence, Extend & Find OGF</button>
       <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
-      {result && (
+      {error && (
+        <div className="alert alert-danger mt-4" role="alert">
+          {error}
+        </div>
+      )}
+
+      {rationalFunction && (
         <div className="alert alert-info mt-4" role="alert">
-          <pre>{result}</pre>
+          <p>Ordinary Generating Function:</p>
+          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
+        </div>
+      )}
+
+      {extendedSequence && (
+        <div className="alert alert-secondary mt-4" role="alert">
+          <p>Extended Sequence:</p>
+          <pre>{extendedSequence}</pre>
         </div>
       )}
     </div>

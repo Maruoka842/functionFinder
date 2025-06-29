@@ -66,7 +66,7 @@ function find_recurrence_relation(terms, deg) {
             [mat[rank], mat[pivot]] = [mat[pivot], mat[rank]];
         }
 
-        const inv = mod_inv(mat[rank][x], mod);
+        const inv = mod_inv(mat[rank][x]);
         for (let x2 = x; x2 < C; ++x2) {
             mat[rank][x2] = (mat[rank][x2] * inv) % mod;
         }
@@ -154,12 +154,13 @@ export function show_extended_sequence(n, terms, degree) {
     if (terms.length === 0) {
         return `Extended Sequence:\n(No input terms)`;
     }
-
     const relation = find_recurrence_relation(terms, degree);
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
     const extended_terms = extended(n, coeffs, terms);
 
-    let info_string = `polynomial recursive relation:\n`;
+    let info_string = `[ Found a polynomial recursive relation ]
+- verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})
+`;
 
     function generate_w_string() {
         const w = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
@@ -176,7 +177,7 @@ export function show_extended_sequence(n, terms, degree) {
             }
         }
 
-        let str = ``;
+        let str = "";
         let equation_parts = [];
 
         for (let i = 0; i <= order; i++) {
@@ -244,13 +245,15 @@ export function show_extended_sequence(n, terms, degree) {
         }
 
         str += final_equation + " = 0\n";
-        str += `verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
         return str;
     }
     
     let result_string = `Extended Sequence:\n`;
     for (let i = 0; i < extended_terms.length; ++i) {
         let val = extended_terms[i];
+        if (Math.abs(val - mod) < Math.abs(val)) {
+            val = val - mod;
+        }
         result_string += `${i}: ${val}\n`;
     }
     return info_string + generate_w_string() + "\n" + result_string;
