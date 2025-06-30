@@ -22,28 +22,33 @@ function App() {
   const handleTweet = () => {
     const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '');
     const sequenceSnippet = terms.slice(0, 5).join(', ') + (terms.length > 5 ? '...' : '');
-    let tweetContent = `I just used this Sequence Solver to find a recurrence relation for the sequence ${sequenceSnippet}!`;
+    let tweetContent = `I found a recurrence for ${sequenceSnippet}!\n`;
 
     if (rationalFunction && rationalFunction.P_latex && rationalFunction.Q_latex) {
-      tweetContent += ` Its rational function is (${rationalFunction.P_latex})/(${rationalFunction.Q_latex}).`;
-    }
-
-    if (polynomialRecurrenceResult && !polynomialRecurrenceResult.error && polynomialRecurrenceResult.polynomialRecurrenceEquation) {
-      tweetContent += ` P-Rec: ${polynomialRecurrenceResult.polynomialRecurrenceEquation}.`;
+      tweetContent += ` Rational: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex}).\n`;
     }
 
     if (algebraicRecurrenceResult && !algebraicRecurrenceResult.error && algebraicRecurrenceResult.algebraicRecurrenceEquation) {
-      tweetContent += ` A-Rec: ${algebraicRecurrenceResult.algebraicRecurrenceEquation}.`;
+      tweetContent += ` Algebraic: ${algebraicRecurrenceResult.algebraicRecurrenceEquation}.\n`;
     }
+
+    if (polynomialRecurrenceResult && !polynomialRecurrenceResult.error && polynomialRecurrenceResult.polynomialRecurrenceEquation) {
+      tweetContent += ` P-Rec: ${polynomialRecurrenceResult.polynomialRecurrenceEquation}.\n`;
+    }
+
 
     const appUrl = `https://example.com/sequence-solver?sequence=${encodeURIComponent(sequence)}&degree=${encodeURIComponent(degree)}&extendLength=${encodeURIComponent(extendLength)}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetContent + ` ${appUrl}`)}`;
     window.open(twitterUrl, '_blank');
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <div className="container mt-5">
-      <h1 className="mb-4">Sequence Tools</h1>
+      <h1 className="mb-4">Sequence Recurrence Finder</h1>
       <div className="mb-3">
         <label htmlFor="sequenceInput" className="form-label">Enter a sequence (comma-separated):</label>
         <textarea
@@ -100,16 +105,18 @@ function App() {
       <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
       {rationalFunction && (
-        <div className="alert alert-info mt-4" role="alert">
+        <div className="alert alert-info mt-4 position-relative" role="alert">
           <p>Constant Recursive Relation:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(`(${rationalFunction.P_latex})/(${rationalFunction.Q_latex})`)}>Copy</button>
           <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
           <pre>{ogfExtendedSequence}</pre>
         </div>
       )}
 
       {algebraicRecurrenceResult && !algebraicRecurrenceResult.error && (
-        <div className="alert alert-info mt-4" role="alert">
+        <div className="alert alert-info mt-4 position-relative" role="alert">
           <p>Algebraic Recursive Relation:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicRecurrenceResult.algebraicRecurrenceEquation)}>Copy</button>
           <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation} />
           <pre>{algebraicRecurrenceResult.sequence}</pre>
         </div>
@@ -123,8 +130,9 @@ function App() {
 
       {polynomialRecurrenceResult && !polynomialRecurrenceResult.error && (
         <>
-            <div className="alert alert-secondary mt-4" role="alert">
+            <div className="alert alert-secondary mt-4 position-relative" role="alert">
                 <p>Polynomial Recursive Relation:</p>
+                <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation)}>Copy</button>
                 <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
                 <pre>{polynomialRecurrenceResult.sequence}</pre>
             </div>

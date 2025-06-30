@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { analyze_polynomial_recurrence, extend_linear_recurrence_sequence, analyze_algebraic_recurrence, findRationalFunction, mod } from '../recurrence.js';
+import { analyzePolynomialRecurrence, extendLinearRecurrenceSequence, analyzeAlgebraicRecurrence, findRationalFunction, mod } from '../recurrence.js';
 
 export const useRecurrenceAnalysis = () => {
   const [sequence, setSequence] = useState('');
@@ -58,12 +58,12 @@ export const useRecurrenceAnalysis = () => {
       setError(rationalFuncResult.error);
     } else {
       setRationalFunction(rationalFuncResult);
-      const extended = extend_linear_recurrence_sequence([], rationalFuncResult.Q, terms, n);
+      const extended = extendLinearRecurrenceSequence([], rationalFuncResult.Q, terms, n);
       setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val}`).join('\n'));
     }
 
     // Polynomial Recurrence Part
-    const polyResult = analyze_polynomial_recurrence(n, terms, d);
+    const polyResult = analyzePolynomialRecurrence(n, terms, d);
     setPolynomialRecurrenceResult(polyResult);
     if (polyResult.error) {
       setPolynomialRecurrenceError(polyResult.error);
@@ -72,7 +72,7 @@ export const useRecurrenceAnalysis = () => {
     }
 
     // Algebraic Recurrence Part
-    const algResult = analyze_algebraic_recurrence(n, terms, d);
+    const algResult = analyzeAlgebraicRecurrence(n, terms, d);
     setAlgebraicRecurrenceResult(algResult);
     if (algResult.error) {
       setAlgebraicRecurrenceError(algResult.error);
