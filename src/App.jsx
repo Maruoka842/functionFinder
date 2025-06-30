@@ -1,106 +1,44 @@
 import { useState } from 'react';
-import { analyze_polynomial_recurrence, analyze_algebraic_recurrence, extend_sequence_from_constant_recursive, findRationalFunction, polyToLatex, pow, modinv, mod } from './recurrence.js';
 import 'katex/dist/katex.min.css';
 import { BlockMath } from 'react-katex';
 import { Link } from 'react-router-dom';
+import { useRecurrenceAnalysis } from './hooks/useRecurrenceAnalysis';
 
 function App() {
-  const [sequence, setSequence] = useState('');
-  const [degree, setDegree] = useState('1');
-  const [extendLength, setExtendLength] = useState('20');
-  const [error, setError] = useState('');
-  const [polynomialRecurrenceError, setPolynomialRecurrenceError] = useState('');
-  const [algebraicRecurrenceError, setAlgebraicRecurrenceError] = useState('');
-  const [rationalFunction, setRationalFunction] = useState(null);
-  const [polynomialRecurrenceResult, setPolynomialRecurrenceResult] = useState(null);
-  const [algebraicRecurrenceResult, setAlgebraicRecurrenceResult] = useState(null);
-  const [ogfExtendedSequence, setOgfExtendedSequence] = useState('');
+  const {
+    sequence, setSequence,
+    degree, setDegree,
+    extendLength, setExtendLength,
+    error, setError,
+    polynomialRecurrenceError, setPolynomialRecurrenceError,
+    algebraicRecurrenceError, setAlgebraicRecurrenceError,
+    rationalFunction, setRationalFunction,
+    polynomialRecurrenceResult, setPolynomialRecurrenceResult,
+    algebraicRecurrenceResult, setAlgebraicRecurrenceResult,
+    ogfExtendedSequence, setOgfExtendedSequence,
+    handleFindAll
+  } = useRecurrenceAnalysis();
 
   const handleTweet = () => {
     const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '');
     const sequenceSnippet = terms.slice(0, 5).join(', ') + (terms.length > 5 ? '...' : '');
-    let tweetContent = `For the sequence ${sequenceSnippet}, `;
+    let tweetContent = `I just used this Sequence Solver to find a recurrence relation for the sequence ${sequenceSnippet}!`;
 
     if (rationalFunction && rationalFunction.P_latex && rationalFunction.Q_latex) {
-      const ogfCombinedLength = rationalFunction.P_latex.length + rationalFunction.Q_latex.length;
-      if (ogfCombinedLength < 40) { // Arbitrary limit for "short" OGF
-        tweetContent += ` c-rec: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex}).`;
-      }
+      tweetContent += ` Its rational function is (${rationalFunction.P_latex})/(${rationalFunction.Q_latex}).`;
     }
 
-    if (algebraicRecurrenceResult && algebraicRecurrenceResult.algebraicRecurrenceEquation && !algebraicRecurrenceResult.error) {
-      const algEq = algebraicRecurrenceResult.algebraicRecurrenceEquation;
-      if (algEq.length < 50) { // Arbitrary limit for "short" algebraic equation
-        tweetContent += ` algbraic-rec: ${algEq}.`;
-      } else {
-        tweetContent += ` I found an algebraic recurrence.`;
-      }
+    if (polynomialRecurrenceResult && !polynomialRecurrenceResult.error && polynomialRecurrenceResult.polynomialRecurrenceEquation) {
+      tweetContent += ` P-Rec: ${polynomialRecurrenceResult.polynomialRecurrenceEquation}.`;
     }
 
-    if (polynomialRecurrenceResult && polynomialRecurrenceResult.polynomialRecurrenceEquation && !polynomialRecurrenceResult.error) {
-      const polyEq = polynomialRecurrenceResult.polynomialRecurrenceEquation;
-      if (polyEq.length < 50) { // Arbitrary limit for "short" polynomial equation
-        tweetContent += ` p-rec: ${polyEq}.`;
-      } else {
-        tweetContent += ` I found a polynomial recurrence.`;
-      }
+    if (algebraicRecurrenceResult && !algebraicRecurrenceResult.error && algebraicRecurrenceResult.algebraicRecurrenceEquation) {
+      tweetContent += ` A-Rec: ${algebraicRecurrenceResult.algebraicRecurrenceEquation}.`;
     }
 
-
-    const tweetText = `${tweetContent} \nhttps://example.com/sequence-solver`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    const appUrl = `https://example.com/sequence-solver?sequence=${encodeURIComponent(sequence)}&degree=${encodeURIComponent(degree)}&extendLength=${encodeURIComponent(extendLength)}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetContent + ` ${appUrl}`)}`;
     window.open(twitterUrl, '_blank');
-  };
-
-  const handleFindAll = () => {
-    setError('');
-    setPolynomialRecurrenceError('');
-    setAlgebraicRecurrenceError('');
-    setRationalFunction(null);
-    setPolynomialRecurrenceResult(null);
-    setAlgebraicRecurrenceResult(null);
-    setOgfExtendedSequence('');
-
-    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => Number(BigInt(s) % BigInt(mod)));
-    if (terms.some(isNaN)) {
-      setError('Invalid input: Please enter a comma-separated list of numbers.');
-      return;
-    }
-
-    const n = parseInt(extendLength, 10);
-    const d = parseInt(degree, 10);
-    if (isNaN(n) || isNaN(d)) {
-      setError('Invalid input: Please enter valid numbers for degree and extend length.');
-      return;
-    }
-
-    // Rational Function Part
-    const rationalFuncResult = findRationalFunction(terms);
-    if (rationalFuncResult.error) {
-      setError(rationalFuncResult.error);
-    } else {
-      setRationalFunction(rationalFuncResult);
-      const extended = extend_sequence_from_constant_recursive(rationalFuncResult.P, rationalFuncResult.Q, terms, n);
-      setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val}`).join('\n'));
-    }
-
-    // Polynomial Recurrence Part
-    const polyResult = analyze_polynomial_recurrence(n, terms, d);
-    setPolynomialRecurrenceResult(polyResult);
-    if (polyResult.error) {
-      setPolynomialRecurrenceError(polyResult.error);
-    } else {
-      setPolynomialRecurrenceError('');
-    }
-
-    // Algebraic Recurrence Part
-    const algResult = analyze_algebraic_recurrence(n, terms, d);
-    setAlgebraicRecurrenceResult(algResult);
-    if (algResult.error) {
-      setAlgebraicRecurrenceError(algResult.error);
-    } else {
-      setAlgebraicRecurrenceError('');
-    }
   };
 
   return (
@@ -113,7 +51,10 @@ function App() {
           id="sequenceInput"
           rows="3"
           value={sequence}
-          onChange={(e) => setSequence(e.target.value)}
+          onChange={(e) => {
+            const filteredValue = e.target.value.replace(/[^0-9,\s]/g, '');
+            setSequence(filteredValue);
+          }}
           placeholder="e.g., 1, 1, 2, 3, 5, 8"
         ></textarea>
       </div>
@@ -185,7 +126,6 @@ function App() {
             <div className="alert alert-secondary mt-4" role="alert">
                 <p>Polynomial Recursive Relation:</p>
                 <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
-                
                 <pre>{polynomialRecurrenceResult.sequence}</pre>
             </div>
         </>

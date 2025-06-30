@@ -522,7 +522,7 @@ export const findRationalFunction = (terms) => {
   return { P: A1, Q: B1, P_latex: polyToLatex(A1), Q_latex: polyToLatex(B1) };
 };
 
-export const extend_sequence_from_constant_recursive = (P, Q, initial_terms, n) => {
+export const extend_linear_recurrence_sequence = (P, Q, initial_terms, n) => {
   const a = [...initial_terms];
   for (let i = initial_terms.length; i <= n; i++) {
       let next_val = 0;
@@ -535,81 +535,6 @@ export const extend_sequence_from_constant_recursive = (P, Q, initial_terms, n) 
       a.push((next_val + mod) % mod);
   }
   return a;
-};
-
-export const find_constant_recursive_relation = (terms) => {
-  const N = terms.length;
-  if (N < 2) {
-    throw new Error("Insufficient terms to determine constant recursive relation");
-  }
-
-  let A = [...terms];
-  let B = [1];
-  let B_prev = [1];
-  let L = 0;
-  let m = 1;
-  let b = 1;
-
-  for (let n = 0; n < N; n++) {
-    let delta = A[n];
-    for (let i = 1; i <= L; i++) {
-      delta = (delta + B[i] * A[n - i]) % mod;
-    }
-    delta = (delta + mod) % mod;
-
-    if (delta === 0) {
-      m++;
-    } else {
-      if (2 * L <= n) {
-        let T = [...B];
-        B = new Array(n - L + 1).fill(0);
-        B[0] = 1;
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < T.length; i++) {
-          B[n - L + i] = (B[n - L + i] + factor * T[i]) % mod;
-        }
-        L = n + 1 - L;
-        B_prev = T;
-        b = delta;
-        m = 1;
-      } else {
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < B_prev.length; i++) {
-          B[m + i] = (B[m + i] + factor * B_prev[i]) % mod;
-        }
-        m++;
-      }
-    }
-  }
-  return B;
-};
-
-export const analyze_constant_recursive = (n, terms) => {
-  if (terms.length === 0) {
-    return { error: "Extended Sequence:\n(No input terms)" };
-  }
-  try {
-    const Q = find_constant_recursive_relation(terms);
-    const extended_terms = extend_sequence_from_constant_recursive([], Q, terms, n);
-
-    let result_string = `Extended Sequence:\n`;
-    for (let i = 0; i < extended_terms.length; ++i) {
-      let val = extended_terms[i];
-      if (Math.abs(val - mod) < Math.abs(val)) {
-        val = val - mod;
-      }
-      result_string += `${i}: ${val}\n`;
-    }
-
-    return {
-      constantRecurrenceEquation: generate_constant_recurrence_equation_string(Q),
-      sequence: result_string
-    };
-  } catch (e) {
-    return { error: 'Error: ' + e.message };
-  }
 };
 
 export const generate_constant_recurrence_equation_string = (Q) => {
@@ -630,205 +555,7 @@ export const generate_constant_recurrence_equation_string = (Q) => {
   return equation_parts.join("") + " = 0";
 };
 
-export const find_linear_recurrence_relation = (terms) => {
-  const N = terms.length;
-  if (N < 2) {
-    throw new Error("Insufficient terms to determine linear recurrence relation");
-  }
-
-  let A = [...terms];
-  let B = [1];
-  let B_prev = [1];
-  let L = 0;
-  let m = 1;
-  let b = 1;
-
-  for (let n = 0; n < N; n++) {
-    let delta = A[n];
-    for (let i = 1; i <= L; i++) {
-      delta = (delta + B[i] * A[n - i]) % mod;
-    }
-    delta = (delta + mod) % mod;
-
-    if (delta === 0) {
-      m++;
-    } else {
-      if (2 * L <= n) {
-        let T = [...B];
-        B = new Array(n - L + 1).fill(0);
-        B[0] = 1;
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < T.length; i++) {
-          B[n - L + i] = (B[n - L + i] + factor * T[i]) % mod;
-        }
-        L = n + 1 - L;
-        B_prev = T;
-        b = delta;
-        m = 1;
-      } else {
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < B_prev.length; i++) {
-          B[m + i] = (B[m + i] + factor * B_prev[i]) % mod;
-        }
-        m++;
-      }
-    }
-  }
-  return B;
-};
-
-export const extend_sequence_from_linear_recurrence = (P, Q, initial_terms, n) => {
-  const a = [...initial_terms];
-  for (let i = initial_terms.length; i <= n; i++) {
-      let next_val = 0;
-      if (i < P.length) {
-          next_val = P[i];
-      }
-      for (let j = 1; j < Q.length; j++) {
-          next_val = (next_val - Q[j] * a[i - j]) % mod;
-      }
-      a.push((next_val + mod) % mod);
-  }
-  return a;
-};
-
-export const analyze_linear_recurrence = (n, terms) => {
-  if (terms.length === 0) {
-    return { error: "Extended Sequence:\n(No input terms)" };
-  }
-  try {
-    const Q = find_linear_recurrence_relation(terms);
-    const extended_terms = extend_sequence_from_linear_recurrence([], Q, terms, n);
-
-    let result_string = `Extended Sequence:\n`;
-    for (let i = 0; i < extended_terms.length; ++i) {
-      let val = extended_terms[i];
-      if (Math.abs(val - mod) < Math.abs(val)) {
-        val = val - mod;
-      }
-      result_string += `${i}: ${val}\n`;
-    }
-
-    return {
-      linearRecurrenceEquation: generate_linear_recurrence_equation_string(Q),
-      sequence: result_string
-    };
-  } catch (e) {
-    return { error: 'Error: ' + e.message };
-  }
-};
-
 export const generate_linear_recurrence_equation_string = (Q) => {
-  let equation_parts = [];
-  equation_parts.push("a_n");
-  for (let i = 1; i < Q.length; i++) {
-    let val = Q[i];
-    if (val === 0) continue;
-    if (val > mod / 2) val -= mod;
-    if (val === 0) continue;
-
-    const sign = val < 0 ? " + " : " - ";
-    const abs_val = Math.abs(val);
-    
-    let term_str = `${sign}${abs_val}a_{n-${i}}`;
-    equation_parts.push(term_str);
-  }
-  return equation_parts.join("") + " = 0";
-};
-
-export const find_linear_recursive_relation = (terms) => {
-  const N = terms.length;
-  if (N < 2) {
-    throw new Error("Insufficient terms to determine recursive relation");
-  }
-
-  let A = [...terms];
-  let B = [1];
-  let B_prev = [1];
-  let L = 0;
-  let m = 1;
-  let b = 1;
-
-  for (let n = 0; n < N; n++) {
-    let delta = A[n];
-    for (let i = 1; i <= L; i++) {
-      delta = (delta + B[i] * A[n - i]) % mod;
-    }
-    delta = (delta + mod) % mod;
-
-    if (delta === 0) {
-      m++;
-    } else {
-      if (2 * L <= n) {
-        let T = [...B];
-        B = new Array(n - L + 1).fill(0);
-        B[0] = 1;
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < T.length; i++) {
-          B[n - L + i] = (B[n - L + i] + factor * T[i]) % mod;
-        }
-        L = n + 1 - L;
-        B_prev = T;
-        b = delta;
-        m = 1;
-      } else {
-        const inv_delta = mod_inv(delta);
-        const factor = (mod - b * inv_delta) % mod;
-        for (let i = 0; i < B_prev.length; i++) {
-          B[m + i] = (B[m + i] + factor * B_prev[i]) % mod;
-        }
-        m++;
-      }
-    }
-  }
-  return B;
-};
-
-export const extend_sequence_from_linear_recursive = (P, Q, initial_terms, n) => {
-  const a = [...initial_terms];
-  for (let i = initial_terms.length; i <= n; i++) {
-      let next_val = 0;
-      if (i < P.length) {
-          next_val = P[i];
-      }
-      for (let j = 1; j < Q.length; j++) {
-          next_val = (next_val - Q[j] * a[i - j]) % mod;
-      }
-      a.push((next_val + mod) % mod);
-  }
-  return a;
-};
-
-export const analyze_linear_recursive = (n, terms) => {
-  if (terms.length === 0) {
-    return { error: "Extended Sequence:\n(No input terms)" };
-  }
-  try {
-    const Q = find_linear_recursive_relation(terms);
-    const extended_terms = extend_sequence_from_linear_recursive([], Q, terms, n);
-
-    let result_string = `Extended Sequence:\n`;
-    for (let i = 0; i < extended_terms.length; ++i) {
-      let val = extended_terms[i];
-      if (Math.abs(val - mod) < Math.abs(val)) {
-        val = val - mod;
-      }
-      result_string += `${i}: ${val}\n`;
-    }
-
-    return {
-      recursiveEquation: generate_recursive_equation_string(Q),
-      sequence: result_string
-    };
-  } catch (e) {
-    return { error: 'Error: ' + e.message };
-  }
-};
-
-export const generate_recursive_equation_string = (Q) => {
   let equation_parts = [];
   equation_parts.push("a_n");
   for (let i = 1; i < Q.length; i++) {
@@ -875,9 +602,7 @@ export function extend_sequence_from_algebraic_recurrence(coeffs, terms, n) {
                 b %= mod;
             }
             power = mulPoly(power, extendedTerms).slice(0, i + 1);
-  //          console.log(power.length);
         }
-        //console.log(a,b);
         extendedTerms[i] = b * mod_inv(mod - a) % mod;
     }
     return extendedTerms;
