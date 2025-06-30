@@ -1,137 +1,69 @@
 import { useState } from 'react';
-import { show_extended_sequence } from './recurrence.js';
+import { analyze_polynomial_recurrence, analyze_algebraic_recurrence, extend_sequence_from_constant_recursive, findRationalFunction, polyToLatex, pow, modinv, mod } from './recurrence.js';
 import 'katex/dist/katex.min.css';
 import { BlockMath } from 'react-katex';
+import { Link } from 'react-router-dom';
 
 function App() {
   const [sequence, setSequence] = useState('');
   const [degree, setDegree] = useState('1');
   const [extendLength, setExtendLength] = useState('20');
   const [error, setError] = useState('');
+  const [polynomialRecurrenceError, setPolynomialRecurrenceError] = useState('');
+  const [algebraicRecurrenceError, setAlgebraicRecurrenceError] = useState('');
   const [rationalFunction, setRationalFunction] = useState(null);
-  const [extendedSequence, setExtendedSequence] = useState('');
-
-  const mod = 1000003;
-
-  function pow(a, n) {
-    if (n == 0) return 1;
-    return pow(a * a % mod, Math.floor(n / 2)) * (n % 2 == 1 ? a : 1) % mod;
-  }
-
-  function modinv(a) {
-    return pow(a, mod - 2);
-  }
-
-  const polyToLatex = (coeffs) =>
-    coeffs
-      .map((c, i) => {
-        if (c === 0) return null;
-        const sign = c < 0 ? '-' : i === 0 ? '' : '+';
-        const val = Math.abs(c);
-        if (val === 0) return null;
-
-        let term;
-        if (i === 0) {
-          term = `${val}`;
-        } else if (i === 1) {
-          term = val === 1 ? 'x' : `${val}x`;
-        } else {
-          term = val === 1 ? `x^${i}` : `${val}x^${i}`;
-        }
-        return `${sign} ${term}`;
-      })
-      .filter(Boolean)
-      .join(' ')
-      .replace(/^\+ /, '');
-
-  const findRationalFunction = (terms) => {
-    if (terms.some(isNaN)) {
-      return { error: "Invalid input: Please enter a comma-separated list of numbers." };
-    }
-    if (terms.length < 4 || terms.length % 2 !== 0) {
-      return { error: "Invalid input: Please enter an even number of terms (at least 4)." };
-    }
-    const N = Math.floor(terms.length / 2);
-    const size = 2 * N + 1;
-    let A0 = new Array(size).fill(0);
-    let B0 = new Array(size).fill(0);
-    let A1 = new Array(size).fill(0);
-    let B1 = new Array(size).fill(0);
-
-    A0[2 * N] = 1;
-    for (let i = 0; i < terms.length; i++) A1[i] = terms[i];
-    B1[0] = 1;
-
-    let deg = 2 * N - 1;
-    while (deg > N) {
-      if (A1[deg] === 0) {
-        deg--;
-        continue;
-      }
-      for (let i = size - 1; i >= deg; i--) {
-        if (A0[i] !== 0) {
-          const q = (A0[i] * modinv(A1[deg])) % mod;
-          for (let j = 0; i - deg + j < 2 * N + 1; j++) {
-            A0[i - deg + j] = (A0[i - deg + j] - A1[j] * q) % mod;
-            B0[i - deg + j] = (B0[i - deg + j] - B1[j] * q) % mod;
-          }
-        }
-      }
-      [A0, A1] = [A1, [...A0]];
-      [B0, B1] = [B1, [...B0]];
-    }
-
-    const invConst = modinv(B1[0]);
-    for (let i = 0; i < size; i++) {
-      B1[i] = (B1[i] * invConst) % mod;
-      A1[i] = (A1[i] * invConst) % mod;
-    }
-    for (let i = 0; i < size; i++) {
-      B1[i] = (B1[i] + mod) % mod;
-      A1[i] = (A1[i] + mod) % mod;
-    }
-    for (let i = 0; i < size; i++) {
-      if (Math.abs(B1[i] - mod) < Math.abs(B1[i])) B1[i] -= mod;
-      if (Math.abs(A1[i] - mod) < Math.abs(A1[i])) A1[i] -= mod;
-    }
-    A1.length = N;
-    B1.length = N + 1;
-
-    return { P_latex: polyToLatex(A1), Q_latex: polyToLatex(B1) };
-  };
+  const [polynomialRecurrenceResult, setPolynomialRecurrenceResult] = useState(null);
+  const [algebraicRecurrenceResult, setAlgebraicRecurrenceResult] = useState(null);
+  const [ogfExtendedSequence, setOgfExtendedSequence] = useState('');
 
   const handleFindAll = () => {
     setError('');
+    setPolynomialRecurrenceError('');
+    setAlgebraicRecurrenceError('');
     setRationalFunction(null);
-    setExtendedSequence('');
+    setPolynomialRecurrenceResult(null);
+    setAlgebraicRecurrenceResult(null);
+    setOgfExtendedSequence('');
 
-    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(Number);
+    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => Number(BigInt(s) % BigInt(mod)));
     if (terms.some(isNaN)) {
       setError('Invalid input: Please enter a comma-separated list of numbers.');
       return;
     }
 
-    try {
-      // Rational Function Part
-      const rationalFuncResult = findRationalFunction(terms);
-      if (rationalFuncResult.error) {
-        setError(rationalFuncResult.error);
-      } else {
-        setRationalFunction(rationalFuncResult);
-      }
+    const n = parseInt(extendLength, 10);
+    const d = parseInt(degree, 10);
+    if (isNaN(n) || isNaN(d)) {
+      setError('Invalid input: Please enter valid numbers for degree and extend length.');
+      return;
+    }
 
-      // Extended Sequence Part
-      const n = parseInt(extendLength, 10);
-      const d = parseInt(degree, 10);
-      if (isNaN(n) || isNaN(d)) {
-        setError('Invalid input: Please enter valid numbers for degree and extend length.');
-        return;
-      }
-      const extendedSequenceResult = show_extended_sequence(n, terms, d);
-      setExtendedSequence(extendedSequenceResult);
+    // Rational Function Part
+    const rationalFuncResult = findRationalFunction(terms);
+    if (rationalFuncResult.error) {
+      setError(rationalFuncResult.error);
+    } else {
+      setRationalFunction(rationalFuncResult);
+      const extended = extend_sequence_from_constant_recursive(rationalFuncResult.P, rationalFuncResult.Q, terms, n);
+      setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val}`).join('\n'));
+    }
 
-    } catch (e) {
-      setError('Error: ' + e.message);
+    // Polynomial Recurrence Part
+    const polyResult = analyze_polynomial_recurrence(n, terms, d);
+    setPolynomialRecurrenceResult(polyResult);
+    if (polyResult.error) {
+      setPolynomialRecurrenceError(polyResult.error);
+    } else {
+      setPolynomialRecurrenceError('');
+    }
+
+    // Algebraic Recurrence Part
+    const algResult = analyze_algebraic_recurrence(terms, d);
+    setAlgebraicRecurrenceResult(algResult);
+    if (algResult.error) {
+      setAlgebraicRecurrenceError(algResult.error);
+    } else {
+      setAlgebraicRecurrenceError('');
     }
   };
 
@@ -175,37 +107,50 @@ function App() {
       <button className="btn btn-primary" onClick={handleFindAll}>Find Recurrence, Extend & Find OGF</button>
       <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
+      {rationalFunction && (
+        <div className="alert alert-info mt-4" role="alert">
+          <p>Constant Recursive Relation:</p>
+          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
+          <pre>{ogfExtendedSequence}</pre>
+        </div>
+      )}
+
+      {algebraicRecurrenceResult && !algebraicRecurrenceResult.error && (
+        <div className="alert alert-info mt-4" role="alert">
+          <p>Algebraic Recursive Relation:</p>
+          <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation} />
+        </div>
+      )}
+
+      {algebraicRecurrenceError && (
+        <div className="alert alert-danger mt-4" role="alert">
+          <p>Algebraic Recurrence Relation:</p> {algebraicRecurrenceError}
+        </div>
+      )}
+
+      {polynomialRecurrenceResult && !polynomialRecurrenceResult.error && (
+        <>
+            <div className="alert alert-secondary mt-4" role="alert">
+                <p>Polynomial Recursive Relation:</p>
+                <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
+                <pre>{polynomialRecurrenceResult.info}</pre>
+                <pre>{polynomialRecurrenceResult.sequence}</pre>
+            </div>
+        </>
+      )}
+
+      {polynomialRecurrenceError && (
+        <div className="alert alert-danger mt-4" role="alert">
+          <p>Polynomial Recurrence:</p> {polynomialRecurrenceError}
+        </div>
+      )}
+
       {error && (
         <div className="alert alert-danger mt-4" role="alert">
           {error}
         </div>
       )}
-
-      {rationalFunction && (
-        <div className="alert alert-info mt-4" role="alert">
-          <p>Ordinary Generating Function:</p>
-          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
-        </div>
-      )}
-
-      {extendedSequence && (
-        <div className="alert alert-secondary mt-4" role="alert">
-          {(() => {
-            const parts = extendedSequence.split('$');
-            if (parts.length === 3) {
-              return (
-                <>
-                  <pre>{parts[0]}</pre>
-                  <BlockMath math={parts[1]} />
-                  <pre>{parts[2]}</pre>
-                </>
-              );
-            } else {
-              return <pre>{extendedSequence}</pre>;
-            }
-          })()}
-        </div>
-      )}
+      <Link to="/ogf-algorithm">Learn about the Algorithm</Link>
     </div>
   );
 }
