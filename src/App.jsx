@@ -16,6 +16,42 @@ function App() {
   const [algebraicRecurrenceResult, setAlgebraicRecurrenceResult] = useState(null);
   const [ogfExtendedSequence, setOgfExtendedSequence] = useState('');
 
+  const handleTweet = () => {
+    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '');
+    const sequenceSnippet = terms.slice(0, 5).join(', ') + (terms.length > 5 ? '...' : '');
+    let tweetContent = `For the sequence ${sequenceSnippet}, `;
+
+    if (rationalFunction && rationalFunction.P_latex && rationalFunction.Q_latex) {
+      const ogfCombinedLength = rationalFunction.P_latex.length + rationalFunction.Q_latex.length;
+      if (ogfCombinedLength < 40) { // Arbitrary limit for "short" OGF
+        tweetContent += ` c-rec: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex}).`;
+      }
+    }
+
+    if (algebraicRecurrenceResult && algebraicRecurrenceResult.algebraicRecurrenceEquation && !algebraicRecurrenceResult.error) {
+      const algEq = algebraicRecurrenceResult.algebraicRecurrenceEquation;
+      if (algEq.length < 50) { // Arbitrary limit for "short" algebraic equation
+        tweetContent += ` algbraic-rec: ${algEq}.`;
+      } else {
+        tweetContent += ` I found an algebraic recurrence.`;
+      }
+    }
+
+    if (polynomialRecurrenceResult && polynomialRecurrenceResult.polynomialRecurrenceEquation && !polynomialRecurrenceResult.error) {
+      const polyEq = polynomialRecurrenceResult.polynomialRecurrenceEquation;
+      if (polyEq.length < 50) { // Arbitrary limit for "short" polynomial equation
+        tweetContent += ` p-rec: ${polyEq}.`;
+      } else {
+        tweetContent += ` I found a polynomial recurrence.`;
+      }
+    }
+
+
+    const tweetText = `${tweetContent} \nhttps://example.com/sequence-solver`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    window.open(twitterUrl, '_blank');
+  };
+
   const handleFindAll = () => {
     setError('');
     setPolynomialRecurrenceError('');
@@ -58,7 +94,7 @@ function App() {
     }
 
     // Algebraic Recurrence Part
-    const algResult = analyze_algebraic_recurrence(terms, d);
+    const algResult = analyze_algebraic_recurrence(n, terms, d);
     setAlgebraicRecurrenceResult(algResult);
     if (algResult.error) {
       setAlgebraicRecurrenceError(algResult.error);
@@ -90,7 +126,14 @@ function App() {
                 className="form-control"
                 id="degreeInput"
                 value={degree}
-                onChange={(e) => setDegree(e.target.value)}
+                onChange={(e) => {
+                    const newValue = parseInt(e.target.value, 10);
+                    if (isNaN(newValue) || newValue < 0) {
+                        setDegree('0');
+                    } else {
+                        setDegree(e.target.value);
+                    }
+                }}
             />
         </div>
         <div className="col">
@@ -100,11 +143,19 @@ function App() {
                 className="form-control"
                 id="extendLengthInput"
                 value={extendLength}
-                onChange={(e) => setExtendLength(e.target.value)}
+                onChange={(e) => {
+                    const newValue = parseInt(e.target.value, 10);
+                    if (isNaN(newValue) || newValue < 0) {
+                        setExtendLength('0');
+                    } else {
+                        setExtendLength(e.target.value);
+                    }
+                }}
             />
         </div>
       </div>
-      <button className="btn btn-primary" onClick={handleFindAll}>Find Recurrence, Extend & Find OGF</button>
+      <button className="btn btn-primary" onClick={handleFindAll}>Find The Recurrence</button>
+      <button className="btn btn-info ms-2" onClick={handleTweet}>Tweet Results</button>
       <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
       {rationalFunction && (
@@ -119,6 +170,7 @@ function App() {
         <div className="alert alert-info mt-4" role="alert">
           <p>Algebraic Recursive Relation:</p>
           <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation} />
+          <pre>{algebraicRecurrenceResult.sequence}</pre>
         </div>
       )}
 
@@ -133,7 +185,7 @@ function App() {
             <div className="alert alert-secondary mt-4" role="alert">
                 <p>Polynomial Recursive Relation:</p>
                 <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
-                <pre>{polynomialRecurrenceResult.info}</pre>
+                
                 <pre>{polynomialRecurrenceResult.sequence}</pre>
             </div>
         </>
