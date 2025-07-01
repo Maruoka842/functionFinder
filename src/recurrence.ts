@@ -530,7 +530,7 @@ export function findAlgebraicEquation(sequence: number[], D: number): number[][]
     normalizeCoefficients(P);
     return P;
   }
-  throw new Error(`Could not find algebraic equation of degree ${D} for the given ${sequence.length} terms.`);
+  throw new Error(`Could not find algebraic equation.`);
 
 }
 
@@ -556,7 +556,6 @@ export function generateAlgebraicDifferentialEquationString(solution: { partitio
         fDerivativeOrders.push(j - 2);
       }
     }
-    console.log(xPower,fDerivativeOrders,coef);
     // Create a unique key for the f product part
     // Sort to ensure consistent key for same product (e.g., f'f vs ff')
     fDerivativeOrders.sort((a, b) => a - b);
