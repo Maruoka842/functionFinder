@@ -78,7 +78,7 @@ export const useRecurrenceAnalysis = () => {
     setEgfAlgebraicDifferentialEquationResult(null);
     setEgfAlgebraicDifferentialEquationError('');
 
-    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => Number(BigInt(s) % BigInt(mod)));
+    const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => Number((BigInt(s) % BigInt(mod) + BigInt(mod)) % BigInt(mod)));
     if (terms.some(isNaN)) {
       setError('Invalid input: Please enter a comma-separated list of numbers.');
       return;

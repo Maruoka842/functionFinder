@@ -564,10 +564,27 @@ export function generateAlgebraicDifferentialEquationString(solution: { partitio
     if (fDerivativeOrders.length === 0) {
       fProductKey = ""; //constant term
     } else {
-      fProductKey = fDerivativeOrders.map(order => {
-        if (order === 0) return "f";
-        return `f^(${order})`; // Using f^(order) for derivatives
-      }).join("");
+      const counts = new Map<number, number>();
+      for (const order of fDerivativeOrders) {
+        counts.set(order, (counts.get(order) || 0) + 1);
+      }
+
+      const parts: string[] = [];
+      for (const order of Array.from(counts.keys()).sort((a, b) => a - b)) {
+        const count = counts.get(order)!;
+        let term = "";
+        if (order === 0) {
+          term = "f";
+        } else {
+          term = `f^{(${order})}`;
+        }
+
+        if (count > 1) {
+          term = `(${term})^{${count}}`;
+        }
+        parts.push(term);
+      }
+      fProductKey = parts.join("");
     }
 
     let currentPoly = polyByFProduct.get(fProductKey) || [];

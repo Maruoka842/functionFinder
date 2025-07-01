@@ -66,7 +66,7 @@ function App() {
           rows="3"
           value={sequence}
           onChange={(e) => {
-            const filteredValue = e.target.value.replace(/[^0-9,\s]/g, '');
+            const filteredValue = e.target.value.replace(/[^0-9,-\s]/g, '');
             setSequence(filteredValue);
           }}
           placeholder="e.g., 1, 1, 2, 3, 5, 8"
