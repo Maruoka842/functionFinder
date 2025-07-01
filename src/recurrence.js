@@ -535,87 +535,93 @@ export function findAlgebraicEquation(sequence, D) {
 }
 
 export function generateAlgebraicDifferentialEquationString(solution) {
-  const grouped = new Map();
+  const polyByFProduct = new Map(); // Key: string representation of f product, Value: array of x coefficients
+
   for (let i = 0; i < solution.partition.length; i++) {
     let coef = solution.v[i];
     if (coef === 0) continue;
 
-    // 係数をmodとmod-modのうち絶対値が小さい方に変換
     if (coef > mod / 2) {
       coef -= mod;
     }
 
     const p = solution.partition[i];
-    let xCount = 0;
-    const fDerivativeOrders = []; // Stores derivative orders like 0, 1, 2
+    let xPower = 0;
+    const fDerivativeOrders = []; // Collect all derivative orders for this term
 
     for (const j of p) {
-      if (j === 1) xCount++; // Represents 'x'
-      else if (j >= 2) fDerivativeOrders.push(j - 2); // Represents f^(k)
-    }
-
-    const xpart = xCount === 0 ? "" : xCount === 1 ? "x" : `x^{${xCount}}`;
-
-    const fPowers = new Map();
-    for (const order of fDerivativeOrders) {
-      fPowers.set(order, (fPowers.get(order) || 0) + 1);
-    }
-
-    let fpart = "";
-    const sortedOrders = Array.from(fPowers.keys()).sort((a, b) => a - b);
-    for (const order of sortedOrders) {
-      const count = fPowers.get(order);
-      if (order === 0) {
-        fpart += count === 1 ? "f" : `f^{${count}}`;
-      } else {
-        fpart += count === 1 ? `f^{(${order})}` : `(f^{(${order})})^{${count}}`;
+      if (j === 1) {
+        xPower++;
+      } else if (j >= 2) {
+        fDerivativeOrders.push(j - 2);
       }
     }
 
-    let key = "";
-    if (xpart && fpart) {
-      key = xpart + fpart;
-    } else if (xpart) {
-      key = xpart;
-    } else if (fpart) {
-      key = fpart;
+    // Create a unique key for the f product part
+    // Sort to ensure consistent key for same product (e.g., f'f vs ff')
+    fDerivativeOrders.sort((a, b) => a - b);
+    let fProductKey = "";
+    if (fDerivativeOrders.length === 0) {
+      fProductKey = "f^(0)"; // Represents f^0, i.e., no derivative terms, just f
     } else {
-      key = "1"; // If both are empty, it's just a constant term
+      fProductKey = fDerivativeOrders.map(order => {
+        if (order === 0) return "f";
+        return `f^(${order})`; // Using f^(order) for derivatives
+      }).join("");
     }
 
-    grouped.set(key, (grouped.get(key) ?? 0) + coef);
-  }
-
-  const parts = [];
-  // Mapのキーをソートして、表示順を安定させる
-  const sortedKeys = Array.from(grouped.keys()).sort();
-
-  for (const key of sortedKeys) {
-    const value = grouped.get(key);
-    if (value === 0) continue;
-
-    let term = "";
-    const abs_value = Math.abs(value);
-    const sign = value < 0 ? " - " : " + ";
-
-    if (key === "1") { // Constant term
-      term = `${abs_value}`;
-    } else if (abs_value === 1) {
-      term = `${key}`;
-    } else {
-      term = `${abs_value}${key}`;
+    let currentPoly = polyByFProduct.get(fProductKey) || [];
+    while (currentPoly.length <= xPower) {
+      currentPoly.push(0);
     }
-    parts.push(sign + term);
+    currentPoly[xPower] = (currentPoly[xPower] + coef) % mod;
+    polyByFProduct.set(fProductKey, currentPoly);
   }
 
-  let expr = parts.join("").trim();
-  if (expr.startsWith("+")) {
-    expr = expr.substring(1).trim();
+  const equationParts = [];
+  const sortedFProductKeys = Array.from(polyByFProduct.keys()).sort(); // Sort keys for consistent output
+
+  for (const fProductKey of sortedFProductKeys) {
+    let polyCoeffs = polyByFProduct.get(fProductKey);
+    polyCoeffs = polyCoeffs.map(c => (c > mod / 2 ? c - mod : c));
+
+    let polyString = polyToLatex(polyCoeffs);
+
+    if (polyString === "") {
+      continue;
+    }
+
+    let fTermString = "";
+    if (fProductKey === "f^(0)") { // Special case for f^0 (no derivatives)
+      fTermString = "f";
+    } else {
+      // Reconstruct the f term string from the key
+      // This assumes the key format is "f^(d1)f^(d2)..."
+      fTermString = fProductKey.replace(/f\^\((\d+)\)/g, (match, p1) => {
+        if (p1 === "0") return "f"; // f^(0) should be just f
+        return `f^{(${p1})}`; // f^(i) for derivatives
+      });
+    }
+
+    let combinedTerm = "";
+    if (polyString === "1") {
+      combinedTerm = fTermString;
+    } else if (polyString === "-1") {
+      combinedTerm = `-${fTermString}`;
+    } else {
+      combinedTerm = `(${polyString})${fTermString}`;
+    }
+    equationParts.push(combinedTerm);
   }
 
-  if (expr.length === 0) expr = "0";
-  expr += " = 0";
-  return expr;
+  let finalEquation = equationParts.join(" + ").replace(/\+ -/g, ' - ');
+  if (finalEquation.startsWith("+ ")) {
+    finalEquation = finalEquation.substring(2);
+  }
+
+  if (finalEquation.length === 0) finalEquation = "0";
+  finalEquation += " = 0";
+  return finalEquation;
 };
 
 
