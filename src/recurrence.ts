@@ -771,6 +771,7 @@ export const findRationalFunction = (terms: number[]) => {
 
 export function mulPoly(a: number[], b: number[]): number[] {
   const n = a.length, m = b.length;
+  if (n === 0 || m === 0) return [];
   const res: number[] = new Array(n + m - 1).fill(0);
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < m; j++) {

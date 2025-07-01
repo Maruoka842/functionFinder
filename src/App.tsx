@@ -184,7 +184,9 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
         </div>
       )}
       <Link to="/how-to-use" className="me-3">How to Use</Link>
-      <Link to="/ogf-algorithm">Learn about the Algorithms</Link>
+      <Link to="/algorithms" className="me-3">Learn about the Algorithms</Link>
+      <Link to="/examples" className="me-3">Examples</Link>
+      <a href="https://x.com/37zigen" target="_blank" rel="noopener noreferrer">Contact Author (Twitter)</a>
     </div>
   );
 }

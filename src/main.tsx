@@ -6,14 +6,16 @@ import App from './App.tsx'
 import AlgorithmExplanation from './AlgorithmExplanation.tsx';
 
 import HowToUse from './HowToUse.tsx';
+import Examples from './Examples.tsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Router>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/ogf-algorithm" element={<AlgorithmExplanation />} />
+        <Route path="/algorithms" element={<AlgorithmExplanation />} />
         <Route path="/how-to-use" element={<HowToUse />} />
+        <Route path="/examples" element={<Examples />} />
       </Routes>
     </Router>
   </StrictMode>,
