@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import 'katex/dist/katex.min.css';
+import './App.css';
 import { BlockMath } from 'react-katex';
+import './App.css';
 import { Link } from 'react-router-dom';
 import { useRecurrenceAnalysis } from './hooks/useRecurrenceAnalysis';
 
 function App() {
+  const [copied, setCopied] = useState({});
   const {
     sequence, setSequence,
     degree, setDegree,
@@ -42,8 +45,10 @@ function App() {
     window.open(twitterUrl, '_blank');
   };
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text);
+    setCopied({ [id]: true });
+    setTimeout(() => setCopied({ [id]: false }), 2000);
   };
 
   return (
@@ -106,35 +111,43 @@ function App() {
 
       {rationalFunction && (
         <div className="alert alert-info mt-4 position-relative" role="alert">
-          <p>Constant Recursive Relation:</p>
-          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(`(${rationalFunction.P_latex})/(${rationalFunction.Q_latex})`)}>Copy</button>
-          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
-          <pre>{ogfExtendedSequence}</pre>
+          <p>Rational Function:</p>          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(`Constant Recursive Relation: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex})
+${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}</button>          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />          <p>Extended Sequence:</p>          <pre className="extended-sequence-output">{ogfExtendedSequence}</pre>
         </div>
       )}
 
       {algebraicRecurrenceResult && !algebraicRecurrenceResult.error && (
         <div className="alert alert-info mt-4 position-relative" role="alert">
-          <p>Algebraic Recursive Relation:</p>
-          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicRecurrenceResult.algebraicRecurrenceEquation)}>Copy</button>
+          <p>Algebraic Equation:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicRecurrenceResult.algebraicRecurrenceEquation, 'algebraic')}>{copied['algebraic'] ? 'Copied!' : 'Copy'}</button>
           <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation} />
-          <pre>{algebraicRecurrenceResult.sequence}</pre>
+          <p>Extended Sequence:</p>
+          <pre className="extended-sequence-output">{
+            typeof algebraicRecurrenceResult.sequence === 'string' 
+              ? algebraicRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
+              : ''
+          }</pre>
         </div>
       )}
 
       {algebraicRecurrenceError && (
         <div className="alert alert-danger mt-4" role="alert">
-          <p>Algebraic Recurrence Relation:</p> {algebraicRecurrenceError}
+          <p>Algebraic Equation:</p> {algebraicRecurrenceError}
         </div>
       )}
 
       {polynomialRecurrenceResult && !polynomialRecurrenceResult.error && (
         <>
             <div className="alert alert-secondary mt-4 position-relative" role="alert">
-                <p>Polynomial Recursive Relation:</p>
-                <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation)}>Copy</button>
+                <p>Polynomial Recurrence:</p>
+                <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation, 'polynomial')}>{copied['polynomial'] ? 'Copied!' : 'Copy'}</button>
                 <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
-                <pre>{polynomialRecurrenceResult.sequence}</pre>
+                <p>Extended Sequence:</p>
+                <pre className="extended-sequence-output">{
+                  typeof polynomialRecurrenceResult.sequence === 'string' 
+                    ? polynomialRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
+                    : ''
+                }</pre>
             </div>
         </>
       )}
@@ -150,7 +163,8 @@ function App() {
           {error}
         </div>
       )}
-      <Link to="/ogf-algorithm">Learn about the Algorithm</Link>
+      <Link to="/how-to-use" className="me-3">How to Use</Link>
+      <Link to="/ogf-algorithm">Learn about the Algorithms</Link>
     </div>
   );
 }

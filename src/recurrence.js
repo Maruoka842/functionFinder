@@ -1,5 +1,3 @@
-import { cosDependencies } from "mathjs";
-
 export const mod = 1000003;
 
 const FACTORIAL = (() => {
@@ -30,7 +28,31 @@ function comb(n, k) {
     return FACTORIAL[n] * modInv(FACTORIAL[k] * FACTORIAL[n - k] % mod) % mod;
 }
 
-function findPolynomialRecurrenceRelation(terms, deg) {
+function normalizeCoefficients(coeffs) {
+    let normalizer = 1;
+    let ABS = mod;
+    for (let a = 1; a < 100; ++a) {
+        let nABS = 0;
+        for (let i = 0; i < coeffs.length; ++i) {
+            for (let j = 0; j < coeffs[i].length; ++j) {
+                let np = coeffs[i][j] * a % mod;
+                nABS = Math.max(nABS, Math.min(np, mod - np));
+            }
+        }
+        if (nABS < ABS) {
+            ABS = nABS;
+            normalizer = a;
+        }
+    }
+    for (let i = 0; i < coeffs.length; ++i) {
+        for (let j = 0; j < coeffs[i].length; ++j) {
+            coeffs[i][j] = (coeffs[i][j] * normalizer) % mod;
+        }
+    }
+    return coeffs;
+}
+
+function findPolynomialRecurrence(terms, deg) {
     const n = terms.length;
     const B = Math.floor((n + 2) / (deg + 2));
     const C = B * (deg + 1);
@@ -103,6 +125,8 @@ function findPolynomialRecurrenceRelation(terms, deg) {
         ret[k][d] = (mod - mat[y][rank]) % mod;
     }
 
+    normalizeCoefficients(ret);
+
     return {
         coeffs: ret,
         order,
@@ -110,6 +134,102 @@ function findPolynomialRecurrenceRelation(terms, deg) {
         last: n - 1,
         nonTrivialTerms: (n - ((deg + 2) * (order + 1) - 2))
     };
+}
+
+function findAlgebraicDifferentialEquation(sequence, K) {
+    let N = sequence.length;
+    let deg = 0;
+    while (comb(deg + 1 + K, deg + 1) <= N - Math.max(0, K - 2)) deg++;
+    if (deg === 0) {
+        console.error("Input sequence should be greater");
+        return null;
+    }
+
+    const totalPartition = comb(deg + K, deg);
+    const partition = [];
+    dfs(partition, Array(deg).fill(0), 0, K);
+
+    const basis = partition.map(p => {
+        let poly = [1];
+        for (const j of p) {
+            if (j === 0) continue;
+            else if (j === 1) poly = mul(poly, [0, 1]); // x
+            else poly = mul(poly, differentiate(sequence, j - 2));
+        }
+        return poly.slice(0, N);
+    });
+
+    N -= Math.max(0, K - 2);
+    const mat = Array.from({ length: N }, (_, i) =>
+        basis.map(b => b[i] ?? 0)
+    );
+
+    const used = Array(N).fill(false);
+    for (let i = 0; i < mat[0].length; i++) {
+        let pivot = 0;
+        while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0)) pivot++;
+        if (pivot === mat.length) continue;
+        used[pivot] = true;
+
+        for (let np = 0; np < mat.length; np++) {
+            if (np !== pivot && mat[np][i] !== 0) {
+                const c = mat[np][i] * inv(mat[pivot][i]) % mod;
+                for (let j = 0; j < mat[np].length; j++) {
+                    mat[np][j] = (mat[np][j] - mat[pivot][j] * c % mod + mod) % mod;
+                }
+            }
+        }
+    }
+
+    for (let i = 0; i < mat[0].length; i++) {
+        let found = false;
+        for (let j = 0; j < mat.length; j++) {
+            if (mat[j][i] !== 0) {
+                let ni = i - 1;
+                while (ni >= 0 && mat[j][ni] === 0) ni--;
+                if (ni >= 0) found = true;
+            }
+        }
+        if (!found) continue;
+
+        const v = Array(basis.length).fill(0);
+        v[i] = 1;
+        for (let j = 0; j < mat.length; j++) {
+            if (mat[j][i] !== 0) {
+                let ni = 0;
+                while (mat[j][ni] === 0) ni++;
+                v[ni] = (-mat[j][i] * inv(mat[j][ni]) % mod + mod) % mod;
+            }
+        }
+        return { partition, v };
+    }
+
+    return null;
+}
+
+
+function dfs(partition, cur, id, K) {
+    if (id === cur.length) {
+        partition.push([...cur]);
+        return;
+    }
+    for (let i = id === 0 ? 0 : cur[id - 1]; i <= K; i++) {
+        cur[id] = i;
+        dfs(partition, cur, id + 1, K);
+    }
+}
+
+
+function differentiate(a, k = 1) {
+    let df = [...a];
+    for (let t = 0; t < k; t++) {
+        const next = new Array(df.length).fill(0);
+        for (let i = 0; i + 1 < df.length; i++) {
+            next[i] = df[i + 1] * (i + 1) % mod;
+        }
+        df = next;
+    }
+    return df;
 }
 
 
@@ -154,7 +274,7 @@ export function analyzePolynomialRecurrence(n, terms, degree) {
         return { error: "Extended Sequence:\n(No input terms)" };
     }
     try {
-        const relation = findPolynomialRecurrenceRelation(terms, degree);
+        const relation = findPolynomialRecurrence(terms, degree);
         const { coeffs, order, deg, last, nonTrivialTerms } = relation;
         const extended_terms = extendSequenceFromPolynomialRecurrence(n, coeffs, terms);
 
@@ -266,7 +386,7 @@ export function analyzeAlgebraicRecurrence(n, terms, degree) {
         return { error: "Algebraic Recurrence:\n(No input terms)" };
     }
     try {
-        const algebraic_relation_coeffs = findAlgebraicRecurrenceRelation(terms, degree);
+        const algebraic_relation_coeffs = findAlgebraicEquation(terms, degree);
         const algebraicRecurrenceEquation = generateAlgebraicRecurrenceEquationString(algebraic_relation_coeffs, degree);
         const extended_terms = extendSequenceFromAlgebraicRecurrence(algebraic_relation_coeffs, terms, n); // Extend by 5 terms for demonstration
 
@@ -336,7 +456,7 @@ export function generateAlgebraicRecurrenceEquationString(coeffs, deg) {
     return poly_strings.join(" + ").replace(/\+ -/g, ' - ') + " = 0";
 }
 
-export function findAlgebraicRecurrenceRelation(sequence, D) {
+export function findAlgebraicEquation(sequence, D) {
   const N = sequence.length;
   const K = Math.min(Math.floor(N / (D + 1)), N);
   if (K <= 1) {
@@ -346,11 +466,7 @@ export function findAlgebraicRecurrenceRelation(sequence, D) {
   const A = Array.from({ length: K }, () => Array(N).fill(0));
   A[0][0] = 1;
   for (let i = 0; i + 1 < K; ++i) {
-    for (let j = 0; j < N; ++j) {
-      for (let k = 0; j + k < N; ++k) {
-        A[i + 1][j + k] = (A[i + 1][j + k] + A[i][j] * sequence[k]) % mod;
-      }
-    }
+    A[i + 1] = mulPoly(A[i], sequence).slice(0, N);
   }
 
   const mat = Array.from({ length: N }, () => Array(K * (D + 1)).fill(0));
@@ -381,9 +497,9 @@ export function findAlgebraicRecurrenceRelation(sequence, D) {
     let found = false;
     for (let j = 0; j < N; ++j) {
       if (mat[j][i] !== 0) {
-        let x = j - 1;
-        while (x >= 0 && mat[x][i] === 0) --x;
-        if (x >= 0) found = true;
+        let ni = i - 1;
+        while (ni >= 0 && mat[j][ni] === 0) --ni;
+        if (ni >= 0) found = true;
       }
     }
     if (!found) continue;
@@ -396,31 +512,53 @@ export function findAlgebraicRecurrenceRelation(sequence, D) {
         P[Math.floor(ni / (D + 1))][ni % (D + 1)] = (-mat[j][i] * modInv(mat[j][ni]) % mod + mod) % mod;
       }
     }
-    let normalizer = 1;
-    let ABS = mod;
-    for (let a = 1; a < 100; ++a) {
-        let nABS = 0;
-        for (let i = 0; i < P.length; ++i) {
-            for (let j = 0; j < P[i].length; ++j) {
-                let np = P[i][j] * a % mod;
-                nABS = Math.max(nABS, Math.min(np, mod - np));
-            }
-        }
-        if (nABS < ABS) {
-            ABS = nABS;
-            normalizer = a;
-        }
-    }
-    for (let i = 0; i < P.length; ++i) {
-        for (let j = 0; j < P[i].length; ++j) {
-            P[i][j] = (P[i][j] * normalizer) % mod;
-        }
-    }
+    normalizeCoefficients(P);
     return P;
   }
-  throw new Error(`Could not find an algebraic recurrence relation of degree ${D} for the given ${sequence.length} terms.`);
+  throw new Error(`Could not find an algebraic equation of degree ${D} for the given ${sequence.length} terms.`);
 
 }
+
+export const generateAlgebraicDifferentialEquationString = (solution) => {
+  const grouped = new Map();
+  for (let i = 0; i < solution.partition.length; i++) {
+      const coef = solution.v[i];
+      if (coef === 0) continue;
+
+      const p = solution.partition[i];
+      let xCount = 0;
+      const dfs = [];
+
+      for (const j of p) {
+          if (j === 1) xCount++;
+          else if (j >= 2) dfs.push(j - 2 === 0 ? "f" : `f^(${j - 2})`);
+      }
+
+      const xpart = xCount === 0 ? "" : xCount === 1 ? "x" : `x^${xCount}`;
+      const fpart = dfs.length === 0 ? "1" : dfs.join("");
+      const key = (xpart ? xpart + "*" : "") + fpart;
+
+      grouped.set(key, (grouped.get(key) ?? 0 + coef) % mod);
+  }
+
+  const parts = [];
+  for (const [key, value] of grouped.entries()) {
+      const coeff = (value + mod) % mod;
+      if (coeff === 0) continue;
+      const sign = "+";
+      const term = coeff === 1 ? `${sign}${key}` : `${sign}${coeff}*${key}`;
+      parts.push(term);
+  }
+
+  if (parts.length > 0 && parts[0].startsWith("+")) {
+      parts[0] = parts[0].slice(1);
+  }
+
+  let expr = parts.join(" ");
+  if (expr.length === 0) expr = "0";
+  expr += " = 0";
+  return expr;
+};
 
 
 export const polyToLatex = (coeffs) =>
@@ -437,7 +575,7 @@ export const polyToLatex = (coeffs) =>
       } else if (i === 1) {
         term = val === 1 ? 'x' : `${val}x`;
       } else {
-        term = val === 1 ? `x^${i}` : `${val}x^${i}`;
+        term = val === 1 ? `x^{${i}}` : `${val}x^{${i}}`;
       }
       return `${sign} ${term}`;
     })
@@ -515,41 +653,7 @@ export const extendLinearRecurrenceSequence = (P, Q, initial_terms, n) => {
   return a;
 };
 
-export const generateConstantRecurrenceEquationString = (Q) => {
-  let equation_parts = [];
-  equation_parts.push("a_n");
-  for (let i = 1; i < Q.length; i++) {
-    let val = Q[i];
-    if (val === 0) continue;
-    if (val > mod / 2) val -= mod;
-    if (val === 0) continue;
 
-    const sign = val < 0 ? " + " : " - ";
-    const abs_val = Math.abs(val);
-    
-    let term_str = `${sign}${abs_val}a_{n-${i}}`;
-    equation_parts.push(term_str);
-  }
-  return equation_parts.join("") + " = 0";
-};
-
-export const generateLinearRecurrenceEquationString = (Q) => {
-  let equation_parts = [];
-  equation_parts.push("a_n");
-  for (let i = 1; i < Q.length; i++) {
-    let val = Q[i];
-    if (val === 0) continue;
-    if (val > mod / 2) val -= mod;
-    if (val === 0) continue;
-
-    const sign = val < 0 ? " + " : " - ";
-    const abs_val = Math.abs(val);
-    
-    let term_str = `${sign}${abs_val}a_{n-${i}}`;
-    equation_parts.push(term_str);
-  }
-  return equation_parts.join("") + " = 0";
-};
 
 export function mulPoly(a, b) {
     const n = a.length, m = b.length;
