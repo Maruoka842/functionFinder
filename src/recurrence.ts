@@ -696,10 +696,27 @@ export const findRationalFunction = (terms: number[]) => {
   if (terms.some(isNaN)) {
     return { error: "Invalid input: Please enter a comma-separated list of numbers." };
   }
-  if (terms.length < 4) {
-    return { error: "Invalid input: Please enter at least 4 terms." };
+  if (terms.length === 0) {
+    return { error: "Invalid input: Sequence cannot be empty." };
   }
-  const N = Math.floor(terms.length / 2);
+
+  let w = 0;
+  let currentTerms = [...terms];
+  while (currentTerms.length > 0 && currentTerms[0] === 0) {
+    w++;
+    currentTerms.shift();
+  }
+
+  if (currentTerms.length === 0) {
+    // All terms were zero
+    return { P: [0], Q: [1], P_latex: "0", Q_latex: "1" };
+  }
+
+  if (currentTerms.length < 4) {
+    return { error: "Invalid input: Please enter at least 4 non-zero terms after leading zeros." };
+  }
+
+  const N = Math.floor(currentTerms.length / 2);
   const size = 2 * N + 1;
   let A0: number[] = new Array(size).fill(0);
   let B0: number[] = new Array(size).fill(0);
@@ -707,7 +724,7 @@ export const findRationalFunction = (terms: number[]) => {
   let B1: number[] = new Array(size).fill(0);
 
   A0[2 * N] = 1;
-  for (let i = 0; i < 2 * N; i++) A1[i] = terms[i];
+  for (let i = 0; i < 2 * N; i++) A1[i] = currentTerms[i];
   B1[0] = 1;
   let deg = 2 * N - 1;
   while (deg > N) {
@@ -744,7 +761,13 @@ export const findRationalFunction = (terms: number[]) => {
   A1.length = N;
   B1.length = N + 1;
 
-  return { P: A1, Q: B1, P_latex: polyToLatex(A1), Q_latex: polyToLatex(B1) };
+  let P_latex = polyToLatex(A1);
+  if (w > 0) {
+    P_latex = (w === 1) ? `x(${P_latex})` : `x^{${w}}(${P_latex})`;
+  }
+  if (P_latex === "") P_latex = "0"; // Handle case where P is zero after leading zeros removed
+
+  return { P: A1, Q: B1, P_latex: P_latex, Q_latex: polyToLatex(B1) };
 };
 
 export function mulPoly(a: number[], b: number[]): number[] {
