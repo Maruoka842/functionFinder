@@ -151,6 +151,8 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
           <p>Algebraic Differential Equation:</p>
           <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicDifferentialEquationResult.equation, 'ade')}>{copied['ade'] ? 'Copied!' : 'Copy'}</button>
           <BlockMath math={algebraicDifferentialEquationResult.equation} />
+          <p>Extended Sequence:</p>
+          <pre className="extended-sequence-output">{algebraicDifferentialEquationResult.sequence}</pre>
         </div>
       )}
 
@@ -165,6 +167,8 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
           <p>Algebraic Differential Equation for EGF:</p>
           <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(egfAlgebraicDifferentialEquationResult.equation, 'egfade')}>{copied['egfade'] ? 'Copied!' : 'Copy'}</button>
           <BlockMath math={egfAlgebraicDifferentialEquationResult.equation} />
+          <p>Extended Sequence:</p>
+          <pre className="extended-sequence-output">{egfAlgebraicDifferentialEquationResult.sequence}</pre>
         </div>
       )}
 

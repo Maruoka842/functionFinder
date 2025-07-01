@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { analyzePolynomialRecurrence, extendSequenceFromLinearRecurrence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF } from '../recurrence.js';
+import { analyzePolynomialRecurrence, extendSequenceFromLinearRecurrence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF, extendSequenceFromAlgebraicDifferentialEquation, FACTORIAL } from '../recurrence.js';
 
 export const useRecurrenceAnalysis = () => {
   const [sequence, setSequence] = useState('');
@@ -84,7 +84,8 @@ export const useRecurrenceAnalysis = () => {
     setAlgebraicRecurrenceResult(algResult);
     if (algResult.error) {
       setAlgebraicRecurrenceError(algResult.error);
-    } else {
+    }
+    else {
       setAlgebraicRecurrenceError('');
     }
 
@@ -92,8 +93,10 @@ export const useRecurrenceAnalysis = () => {
     try {
       const adeqResult = findAlgebraicDifferentialEquation(terms, d);
       if (adeqResult) {
+        const extended = extendSequenceFromAlgebraicDifferentialEquation(adeqResult.v, adeqResult.partition, terms, n);
         setAlgebraicDifferentialEquationResult({
           equation: generateAlgebraicDifferentialEquationString(adeqResult),
+          sequence: extended.map((val, i) => `${i}: ${val}`).join('\n'),
         });
       } else {
         // This else block should ideally not be reached if findAlgebraicDifferentialEquation throws an error
@@ -103,14 +106,16 @@ export const useRecurrenceAnalysis = () => {
     } catch (e) {
       setAlgebraicDifferentialEquationError('Error: ' + e.message);
     }
-
-    // EGF Algebraic Differential Equation Part
+    // EGF Algebraic Differential Equation of EGF Part
     try {
       const egfTerms = transformToEGF(terms);
       const egfAdeqResult = findAlgebraicDifferentialEquation(egfTerms, d);
       if (egfAdeqResult) {
+        const extended = extendSequenceFromAlgebraicDifferentialEquation(egfAdeqResult.v, egfAdeqResult.partition, egfTerms, n);
+        const ogfExtended = extended.map((val, i) => (val * FACTORIAL[i]) % mod);
         setEgfAlgebraicDifferentialEquationResult({
           equation: generateAlgebraicDifferentialEquationString(egfAdeqResult),
+          sequence: ogfExtended.map((val, i) => `${i}: ${val}`).join('\n'),
         });
       } else {
         // This else block should ideally not be reached if findAlgebraicDifferentialEquation throws an error

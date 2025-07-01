@@ -1,6 +1,6 @@
 export const mod = 1000003;
 
-const FACTORIAL = (() => {
+export const FACTORIAL = (() => {
   const MAX = 10000;
   const fact = Array(MAX).fill(1);
   for (let i = 1; i < MAX; i++) {
@@ -9,12 +9,12 @@ const FACTORIAL = (() => {
   return fact;
 })();
 
-function modPow(a, n) {
+export function modPow(a, n) {
   if (n === 0) return 1;
   return modPow(a * a % mod, Math.floor(n / 2)) * (n % 2 === 1 ? a : 1) % mod;
 }
 
-function modInv(a) {
+export function modInv(a) {
   return modPow(a, mod - 2);
 }
 
@@ -59,7 +59,7 @@ function findPolynomialRecurrence(terms, deg) {
   const R = n - (B - 1);
 
   if (B < 2 || R < C - 1) {
-    throw new Error("Could not find polynomial recurrence.");
+    throw new Error(`Could not find a polynomial recurrence of degree ${deg} for the given ${terms.length} terms.`);
   }
 
   let mat = Array.from({ length: R }, () => Array(C).fill(0));
@@ -103,7 +103,7 @@ function findPolynomialRecurrence(terms, deg) {
     ++rank;
   }
   if (rank === C) {
-    throw new Error(`Could not find a polynomial recurrence of degree ${deg} for the given ${terms.length} terms.`);
+    throw new Error("Could not find polynomial recurrence.");
   }
 
   for (let y = rank - 1; y >= 0; --y) {
@@ -619,27 +619,47 @@ export function generateAlgebraicDifferentialEquationString(solution) {
 };
 
 
-export const polyToLatex = (coeffs) =>
-  coeffs
+export const polyToLatex = (coeffs) => {
+  const terms = coeffs
     .map((c, i) => {
       if (c === 0) return null;
-      const sign = c < 0 ? '-' : i === 0 ? '' : '+';
       const val = Math.abs(c);
-      if (val === 0) return null;
 
-      let term;
-      if (i === 0) {
-        term = `${val}`;
-      } else if (i === 1) {
-        term = val === 1 ? 'x' : `${val}x`;
-      } else {
-        term = val === 1 ? `x^{${i}}` : `${val}x^{${i}}`;
+      let termString;
+      if (i === 0) { // Constant term
+        termString = `${val}`;
+      } else if (i === 1) { // x term
+        termString = val === 1 ? 'x' : `${val}x`;
+      } else { // x^i term
+        termString = val === 1 ? `x^{${i}}` : `${val}x^{${i}}`;
       }
-      return `${sign} ${term}`;
+
+      // Determine sign for this specific term
+      const sign = c < 0 ? '-' : '+';
+      return { sign, termString };
     })
-    .filter(Boolean)
-    .join(' ')
-    .replace(/^\+ /, '');
+    .filter(Boolean); // Remove nulls (zero coefficients)
+
+  if (terms.length === 0) {
+    return ""; // Return empty string if all coefficients are zero
+  }
+
+  // Build the final string
+  let result = "";
+  for (let i = 0; i < terms.length; i++) {
+    const term = terms[i];
+    if (i === 0) { // First term
+      if (term.sign === '-') {
+        result += '-';
+      }
+      result += term.termString;
+    } else { // Subsequent terms
+      result += ` ${term.sign} ${term.termString}`;
+    }
+  }
+
+  return result;
+};
 
 export const findRationalFunction = (terms) => {
   if (terms.some(isNaN)) {
@@ -768,56 +788,50 @@ function extendSequenceFromAlgebraicRecurrence(coeffs, terms, n) {
       power = mul2(power, extendedTerms2).slice(0, i + 1);
     }
 
-    let j = 0;
-    while (j < g.length && g[j][1] === 0) j++;
-    if (j === g.length) throw new Error("The relation can not determine the sequence uniquely.");
-    extendedTerms[i] = (mod - modInv(g[j][1]) * g[j][0] % mod) % mod;
+    let id = 0;
+    while (id < g.length && g[id][1] === 0) id++;
+    if (id === g.length) throw new Error("The relation can not determine the sequence uniquely.");
+    extendedTerms[i] = (mod - modInv(g[id][1]) * g[id][0] % mod) % mod;
   }
   return extendedTerms;
 }
 
 
 export function extendSequenceFromAlgebraicDifferentialEquation(v, partition, terms, n) {
-
-  let K = 0;
-  for (let i = 0; i < partition.length; ++i) {
-    if (v[i] != 0) {
-      for (let j = 0; j < partition[i].length; ++j) {
-        K = max(K, partition[i][j]);
-      }
-    }
-  }
-  let M = max(0, K - 2);
   let extendedTerms = [...terms];
   for (let i = terms.length; i <= n; i++) {
     const basis = partition.map(p => {
-      let poly = [1];
+      let poly = [[1, 0]];
       for (const j of p) {
         if (j === 0) continue;
-        else if (j === 1) poly = mulPoly(poly, [0, 1]); // x
-        else poly = mulPoly(poly, differentiate(extendedTerms, j - 2));
-        poly = poly.slice(0, N);
-      }
-      return poly.slice(0, N);
-    });
-
-    // x^ ( i - M ) の係数について a * terms[i] = b という等式を立てる。
-    let a = 0;
-    let b = 0;
-    for (let j = 0; j < v.length; ++j) {
-      if (v[j] == 0) continue;
-      for (let k = 0; k < basis[j].length; ++k) {
-        if (0 <= i - M - k && i - M - k < extendedTerms.length)
-          b = (b + basis[j][k] * extendedTerms[i - M - k]) % mod;
-      }
-      let cnt = 0;
-      for (let k = 0; k < basis[j].length; ++k) {
-        if (basis[j][k] == K) {
-          a += ex;
+        else if (j === 1) poly = mul2(poly, [[0, 0], [1, 0]]); // x
+        else {
+          let df = differentiate(extendedTerms, j - 2);
+          let df2 = Array(i + 1).fill(null).map(() => [0, 0])
+          for (let k = 0; k < Math.min(df.length, i + 1); ++k) {
+            df2[k][0] = df[k];
+          }
+          df2[i - (j - 2)][1] = FACTORIAL[i] * modInv(FACTORIAL[i - (j - 2)]) % mod;
+          poly = mul2(poly, df2);
         }
       }
+      return poly;
+    });
+    let g = Array(i + 1).fill(null).map(() => [0, 0]);
+    for (let j = 0; j < basis.length; ++j) {
+      for (let k = 0; k < Math.min(i + 1, basis[j].length); ++k) {
+        g[k][0] += v[j] * basis[j][k][0];
+        g[k][1] += v[j] * basis[j][k][1];
+        g[k][0] %= mod;
+        g[k][1] %= mod;
+      }
     }
-    extendedTerms[i] = b * modInv(mod - a) % mod;
+    let id = 0;
+    while (id < g.length && g[id][1] == 0) ++id;
+    if (id == g.length) {
+      throw new Error("The relation can not determine the sequence uniquely.");
+    }
+    extendedTerms[i] = (mod - modInv(g[id][1]) * g[id][0] % mod) % mod;
   }
   return extendedTerms;
 }
