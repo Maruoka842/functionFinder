@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { analyzePolynomialRecurrence, extendLinearRecurrenceSequence, analyzeAlgebraicRecurrence, findRationalFunction, mod } from '../recurrence.js';
+import { analyzePolynomialRecurrence, extendLinearRecurrenceSequence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF } from '../recurrence.js';
 
 export const useRecurrenceAnalysis = () => {
   const [sequence, setSequence] = useState('');
@@ -11,6 +11,10 @@ export const useRecurrenceAnalysis = () => {
   const [rationalFunction, setRationalFunction] = useState(null);
   const [polynomialRecurrenceResult, setPolynomialRecurrenceResult] = useState(null);
   const [algebraicRecurrenceResult, setAlgebraicRecurrenceResult] = useState(null);
+  const [algebraicDifferentialEquationResult, setAlgebraicDifferentialEquationResult] = useState(null);
+  const [algebraicDifferentialEquationError, setAlgebraicDifferentialEquationError] = useState('');
+  const [egfAlgebraicDifferentialEquationResult, setEgfAlgebraicDifferentialEquationResult] = useState(null);
+  const [egfAlgebraicDifferentialEquationError, setEgfAlgebraicDifferentialEquationError] = useState('');
   const [ogfExtendedSequence, setOgfExtendedSequence] = useState('');
 
   useEffect(() => {
@@ -38,6 +42,10 @@ export const useRecurrenceAnalysis = () => {
     setPolynomialRecurrenceResult(null);
     setAlgebraicRecurrenceResult(null);
     setOgfExtendedSequence('');
+    setAlgebraicDifferentialEquationResult(null);
+    setAlgebraicDifferentialEquationError('');
+    setEgfAlgebraicDifferentialEquationResult(null);
+    setEgfAlgebraicDifferentialEquationError('');
 
     const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => Number(BigInt(s) % BigInt(mod)));
     if (terms.some(isNaN)) {
@@ -79,6 +87,39 @@ export const useRecurrenceAnalysis = () => {
     } else {
       setAlgebraicRecurrenceError('');
     }
+
+    // Algebraic Differential Equation Part
+    try {
+      const adeqResult = findAlgebraicDifferentialEquation(terms, d);
+      if (adeqResult) {
+        setAlgebraicDifferentialEquationResult({
+          equation: generateAlgebraicDifferentialEquationString(adeqResult),
+        });
+      } else {
+        // This else block should ideally not be reached if findAlgebraicDifferentialEquation throws an error
+        setAlgebraicDifferentialEquationResult(null);
+        setAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation.');
+      }
+    } catch (e) {
+      setAlgebraicDifferentialEquationError('Error: ' + e.message);
+    }
+
+    // EGF Algebraic Differential Equation Part
+    try {
+      const egfTerms = transformToEGF(terms);
+      const egfAdeqResult = findAlgebraicDifferentialEquation(egfTerms, d);
+      if (egfAdeqResult) {
+        setEgfAlgebraicDifferentialEquationResult({
+          equation: generateAlgebraicDifferentialEquationString(egfAdeqResult),
+        });
+      } else {
+        // This else block should ideally not be reached if findAlgebraicDifferentialEquation throws an error
+        setEgfAlgebraicDifferentialEquationResult(null);
+        setEgfAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation for EGF.');
+      }
+    } catch (e) {
+      setEgfAlgebraicDifferentialEquationError('Error: ' + e.message);
+    }
   };
 
   return {
@@ -92,6 +133,10 @@ export const useRecurrenceAnalysis = () => {
     polynomialRecurrenceResult, setPolynomialRecurrenceResult,
     algebraicRecurrenceResult, setAlgebraicRecurrenceResult,
     ogfExtendedSequence, setOgfExtendedSequence,
+    algebraicDifferentialEquationResult, setAlgebraicDifferentialEquationResult,
+    algebraicDifferentialEquationError, setAlgebraicDifferentialEquationError,
+    egfAlgebraicDifferentialEquationResult, setEgfAlgebraicDifferentialEquationResult,
+    egfAlgebraicDifferentialEquationError, setEgfAlgebraicDifferentialEquationError,
     handleFindAll
   };
 };

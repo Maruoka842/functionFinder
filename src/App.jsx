@@ -19,6 +19,10 @@ function App() {
     polynomialRecurrenceResult, setPolynomialRecurrenceResult,
     algebraicRecurrenceResult, setAlgebraicRecurrenceResult,
     ogfExtendedSequence, setOgfExtendedSequence,
+    algebraicDifferentialEquationResult, setAlgebraicDifferentialEquationResult,
+    algebraicDifferentialEquationError, setAlgebraicDifferentialEquationError,
+    egfAlgebraicDifferentialEquationResult, setEgfAlgebraicDifferentialEquationResult,
+    egfAlgebraicDifferentialEquationError, setEgfAlgebraicDifferentialEquationError,
     handleFindAll
   } = useRecurrenceAnalysis();
 
@@ -136,25 +140,37 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
         </div>
       )}
 
-      {polynomialRecurrenceResult && !polynomialRecurrenceResult.error && (
-        <>
-            <div className="alert alert-secondary mt-4 position-relative" role="alert">
-                <p>Polynomial Recurrence:</p>
-                <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation, 'polynomial')}>{copied['polynomial'] ? 'Copied!' : 'Copy'}</button>
-                <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
-                <p>Extended Sequence:</p>
-                <pre className="extended-sequence-output">{
-                  typeof polynomialRecurrenceResult.sequence === 'string' 
-                    ? polynomialRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
-                    : ''
-                }</pre>
-            </div>
-        </>
-      )}
-
       {polynomialRecurrenceError && (
         <div className="alert alert-danger mt-4" role="alert">
           <p>Polynomial Recurrence:</p> {polynomialRecurrenceError}
+        </div>
+      )}
+
+      {algebraicDifferentialEquationResult && (
+        <div className="alert alert-info mt-4 position-relative" role="alert">
+          <p>Algebraic Differential Equation:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicDifferentialEquationResult.equation, 'ade')}>{copied['ade'] ? 'Copied!' : 'Copy'}</button>
+          <BlockMath math={algebraicDifferentialEquationResult.equation} />
+        </div>
+      )}
+
+      {algebraicDifferentialEquationError && (
+        <div className="alert alert-danger mt-4" role="alert">
+          <p>Algebraic Differential Equation:</p> {algebraicDifferentialEquationError}
+        </div>
+      )}
+
+      {egfAlgebraicDifferentialEquationResult && (
+        <div className="alert alert-info mt-4 position-relative" role="alert">
+          <p>Algebraic Differential Equation for EGF:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(egfAlgebraicDifferentialEquationResult.equation, 'egfade')}>{copied['egfade'] ? 'Copied!' : 'Copy'}</button>
+          <BlockMath math={egfAlgebraicDifferentialEquationResult.equation} />
+        </div>
+      )}
+
+      {egfAlgebraicDifferentialEquationError && (
+        <div className="alert alert-danger mt-4" role="alert">
+          <p>EGF Algebraic Differential Equation:</p> {egfAlgebraicDifferentialEquationError}
         </div>
       )}
 

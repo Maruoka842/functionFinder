@@ -1,7 +1,7 @@
 export const mod = 1000003;
 
 const FACTORIAL = (() => {
-    const MAX = 1000;
+    const MAX = 10000;
     const fact = Array(MAX).fill(1);
     for (let i = 1; i < MAX; i++) {
         fact[i] = fact[i - 1] * i % mod;
@@ -59,7 +59,7 @@ function findPolynomialRecurrence(terms, deg) {
     const R = n - (B - 1);
 
     if (B < 2 || R < C - 1) {
-        throw new Error("Insufficient terms to determine polynomial recurrence relation");
+        throw new Error("Could not find polynomial recurrence.");
     }
 
     let mat = Array.from({ length: R }, () => Array(C).fill(0));
@@ -103,7 +103,7 @@ function findPolynomialRecurrence(terms, deg) {
         ++rank;
     }
     if (rank === C) {
-        throw new Error(`Could not find a polynomial recurrence relation of degree ${deg} for the given ${terms.length} terms.`);
+        throw new Error(`Could not find a polynomial recurrence of degree ${deg} for the given ${terms.length} terms.`);
     }
 
     for (let y = rank - 1; y >= 0; --y) {
@@ -136,25 +136,38 @@ function findPolynomialRecurrence(terms, deg) {
     };
 }
 
-function findAlgebraicDifferentialEquation(sequence, K) {
+export function transformToEGF(terms) {
+    const egfTerms = [];
+    for (let i = 0; i < terms.length; i++) {
+        if (FACTORIAL[i] === 0) {
+            // This case should ideally not happen with mod being prime and i < mod
+            // but as a safeguard against division by zero if FACTORIAL[i] somehow becomes 0 mod mod
+            throw new Error("Factorial is zero modulo mod, cannot compute EGF term.");
+        }
+        const invFactorial = modInv(FACTORIAL[i]);
+        egfTerms.push((terms[i] * invFactorial) % mod);
+    }
+    return egfTerms;
+}
+
+export function findAlgebraicDifferentialEquation(sequence, K) {
     let N = sequence.length;
     let deg = 0;
     while (comb(deg + 1 + K, deg + 1) <= N - Math.max(0, K - 2)) deg++;
     if (deg === 0) {
-        console.error("Input sequence should be greater");
-        return null;
+        throw new Error("Could not find an algebraic differential equation.");
     }
 
     const totalPartition = comb(deg + K, deg);
     const partition = [];
     dfs(partition, Array(deg).fill(0), 0, K);
-
+    
     const basis = partition.map(p => {
         let poly = [1];
         for (const j of p) {
             if (j === 0) continue;
-            else if (j === 1) poly = mul(poly, [0, 1]); // x
-            else poly = mul(poly, differentiate(sequence, j - 2));
+            else if (j === 1) poly = mulPoly(poly, [0, 1]); // x
+            else poly = mulPoly(poly, differentiate(sequence, j - 2));
         }
         return poly.slice(0, N);
     });
@@ -173,7 +186,7 @@ function findAlgebraicDifferentialEquation(sequence, K) {
 
         for (let np = 0; np < mat.length; np++) {
             if (np !== pivot && mat[np][i] !== 0) {
-                const c = mat[np][i] * inv(mat[pivot][i]) % mod;
+                const c = mat[np][i] * modInv(mat[pivot][i]) % mod;
                 for (let j = 0; j < mat[np].length; j++) {
                     mat[np][j] = (mat[np][j] - mat[pivot][j] * c % mod + mod) % mod;
                 }
@@ -198,9 +211,10 @@ function findAlgebraicDifferentialEquation(sequence, K) {
             if (mat[j][i] !== 0) {
                 let ni = 0;
                 while (mat[j][ni] === 0) ni++;
-                v[ni] = (-mat[j][i] * inv(mat[j][ni]) % mod + mod) % mod;
+                v[ni] = (-mat[j][i] * modInv(mat[j][ni]) % mod + mod) % mod;
             }
         }
+        normalizeCoefficients([v]);
         return { partition, v };
     }
 
@@ -460,7 +474,7 @@ export function findAlgebraicEquation(sequence, D) {
   const N = sequence.length;
   const K = Math.min(Math.floor(N / (D + 1)), N);
   if (K <= 1) {
-    throw new Error("Insufficient terms to determine algebraic recurrence relation");
+    throw new Error("Could not find algebraic recurrence");
   }
 
   const A = Array.from({ length: K }, () => Array(N).fill(0));
@@ -519,46 +533,89 @@ export function findAlgebraicEquation(sequence, D) {
 
 }
 
-export const generateAlgebraicDifferentialEquationString = (solution) => {
+export function generateAlgebraicDifferentialEquationString(solution) {
   const grouped = new Map();
-  for (let i = 0; i < solution.partition.length; i++) {
-      const coef = solution.v[i];
-      if (coef === 0) continue;
+      for (let i = 0; i < solution.partition.length; i++) {
+          let coef = solution.v[i];
+          if (coef === 0) continue;
 
-      const p = solution.partition[i];
-      let xCount = 0;
-      const dfs = [];
+          // 係数をmodとmod-modのうち絶対値が小さい方に変換
+          if (coef > mod / 2) {
+              coef -= mod;
+          }
 
-      for (const j of p) {
-          if (j === 1) xCount++;
-          else if (j >= 2) dfs.push(j - 2 === 0 ? "f" : `f^(${j - 2})`);
+          const p = solution.partition[i];
+          let xCount = 0;
+          const fDerivativeOrders = []; // Stores derivative orders like 0, 1, 2
+
+          for (const j of p) {
+              if (j === 1) xCount++; // Represents 'x'
+              else if (j >= 2) fDerivativeOrders.push(j - 2); // Represents f^(k)
+          }
+
+          const xpart = xCount === 0 ? "" : xCount === 1 ? "x" : `x^{${xCount}}`;
+          
+          const fPowers = new Map();
+          for (const order of fDerivativeOrders) {
+              fPowers.set(order, (fPowers.get(order) || 0) + 1);
+          }
+
+          let fpart = "";
+          const sortedOrders = Array.from(fPowers.keys()).sort((a, b) => a - b);
+          for (const order of sortedOrders) {
+              const count = fPowers.get(order);
+              if (order === 0) {
+                  fpart += count === 1 ? "f" : `f^{${count}}`;
+              } else {
+                  fpart += count === 1 ? `f^{(${order})}` : `(f^{(${order})})^{${count}}`;
+              }
+          }
+
+          let key = "";
+          if (xpart && fpart) {
+              key = xpart + fpart;
+          } else if (xpart) {
+              key = xpart;
+          } else if (fpart) {
+              key = fpart;
+          } else {
+              key = "1"; // If both are empty, it's just a constant term
+          }
+
+          grouped.set(key, (grouped.get(key) ?? 0) + coef);
       }
 
-      const xpart = xCount === 0 ? "" : xCount === 1 ? "x" : `x^${xCount}`;
-      const fpart = dfs.length === 0 ? "1" : dfs.join("");
-      const key = (xpart ? xpart + "*" : "") + fpart;
+      const parts = [];
+      // Mapのキーをソートして、表示順を安定させる
+      const sortedKeys = Array.from(grouped.keys()).sort();
 
-      grouped.set(key, (grouped.get(key) ?? 0 + coef) % mod);
-  }
+      for (const key of sortedKeys) {
+          const value = grouped.get(key);
+          if (value === 0) continue;
+          
+          let term = "";
+          const abs_value = Math.abs(value);
+          const sign = value < 0 ? " - " : " + ";
 
-  const parts = [];
-  for (const [key, value] of grouped.entries()) {
-      const coeff = (value + mod) % mod;
-      if (coeff === 0) continue;
-      const sign = "+";
-      const term = coeff === 1 ? `${sign}${key}` : `${sign}${coeff}*${key}`;
-      parts.push(term);
-  }
+          if (key === "1") { // Constant term
+              term = `${abs_value}`;
+          } else if (abs_value === 1) {
+              term = `${key}`;
+          } else {
+              term = `${abs_value}${key}`;
+          }
+          parts.push(sign + term);
+      }
 
-  if (parts.length > 0 && parts[0].startsWith("+")) {
-      parts[0] = parts[0].slice(1);
-  }
+      let expr = parts.join("").trim();
+      if (expr.startsWith("+")) {
+          expr = expr.substring(1).trim();
+      }
 
-  let expr = parts.join(" ");
-  if (expr.length === 0) expr = "0";
-  expr += " = 0";
-  return expr;
-};
+      if (expr.length === 0) expr = "0";
+      expr += " = 0";
+      return expr;
+    };
 
 
 export const polyToLatex = (coeffs) =>
