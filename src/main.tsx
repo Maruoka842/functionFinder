@@ -2,10 +2,10 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'
-import App from './App.jsx'
-import AlgorithmExplanation from './AlgorithmExplanation.jsx';
+import App from './App.tsx'
+import AlgorithmExplanation from './AlgorithmExplanation.tsx';
 
-import HowToUse from './HowToUse.jsx';
+import HowToUse from './HowToUse.tsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -1,34 +1,34 @@
-export const mod = 1000003;
+export const mod: number = 1000003;
 
-export const FACTORIAL = (() => {
+export const FACTORIAL: number[] = (() => {
   const MAX = 10000;
-  const fact = Array(MAX).fill(1);
+  const fact: number[] = Array(MAX).fill(1);
   for (let i = 1; i < MAX; i++) {
     fact[i] = fact[i - 1] * i % mod;
   }
   return fact;
 })();
 
-export function modPow(a, n) {
+export function modPow(a: number, n: number): number {
   if (n === 0) return 1;
   return modPow(a * a % mod, Math.floor(n / 2)) * (n % 2 === 1 ? a : 1) % mod;
 }
 
-export function modInv(a) {
+export function modInv(a: number): number {
   return modPow(a, mod - 2);
 }
 
-function gcd(a, b) {
+function gcd(a: number, b: number): number {
   if (a == 0) return b;
   return gcd(b % a, a);
 }
 
-function comb(n, k) {
+function comb(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
   return FACTORIAL[n] * modInv(FACTORIAL[k] * FACTORIAL[n - k] % mod) % mod;
 }
 
-function normalizeCoefficients(coeffs) {
+function normalizeCoefficients(coeffs: number[][]): number[][] {
   let normalizer = 1;
   let ABS = mod;
   for (let a = 1; a < 100; ++a) {
@@ -52,17 +52,17 @@ function normalizeCoefficients(coeffs) {
   return coeffs;
 }
 
-function findPolynomialRecurrence(terms, deg) {
+function findPolynomialRecurrence(terms: number[], deg: number) {
   const n = terms.length;
   const B = Math.floor((n + 2) / (deg + 2));
   const C = B * (deg + 1);
   const R = n - (B - 1);
 
   if (B < 2 || R < C - 1) {
-    throw new Error(`Could not find a polynomial recurrence of degree ${deg} for the given ${terms.length} terms.`);
+    throw new Error("Could not find polynomial recurrence.");
   }
 
-  let mat = Array.from({ length: R }, () => Array(C).fill(0));
+  let mat: number[][] = Array.from({ length: R }, () => Array(C).fill(0));
   for (let y = 0; y < R; ++y) {
     for (let b = 0; b < B; ++b) {
       let v = ((terms[y + b] % mod) + mod) % mod;
@@ -116,7 +116,7 @@ function findPolynomialRecurrence(terms, deg) {
   }
 
   const order = Math.floor(rank / (deg + 1));
-  const ret = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
+  const ret: number[][] = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
   ret[0][rank % (deg + 1)] = 1;
 
   for (let y = rank - 1; y >= 0; --y) {
@@ -136,8 +136,8 @@ function findPolynomialRecurrence(terms, deg) {
   };
 }
 
-export function transformToEGF(terms) {
-  const egfTerms = [];
+export function transformToEGF(terms: number[]): number[] {
+  const egfTerms: number[] = [];
   for (let i = 0; i < terms.length; i++) {
     if (FACTORIAL[i] === 0) {
       // This case should ideally not happen with mod being prime and i < mod
@@ -150,20 +150,20 @@ export function transformToEGF(terms) {
   return egfTerms;
 }
 
-export function findAlgebraicDifferentialEquation(sequence, K) {
+export function findAlgebraicDifferentialEquation(sequence: number[], K: number) {
   let N = sequence.length;
   let deg = 0;
   while (comb(deg + 1 + K, deg + 1) <= N - Math.max(0, K - 2)) deg++;
   if (deg === 0) {
-    throw new Error("Could not find an algebraic differential equation.");
+    throw new Error("Could not find algebraic differential equation.");
   }
 
   const totalPartition = comb(deg + K, deg);
-  const partition = [];
+  const partition: number[][] = [];
   dfs(partition, Array(deg).fill(0), 0, K);
 
   const basis = partition.map(p => {
-    let poly = [1];
+    let poly: number[] = [1];
     for (const j of p) {
       if (j === 0) continue;// 1
       else if (j === 1) poly = mulPoly(poly, [0, 1]); // x
@@ -174,11 +174,11 @@ export function findAlgebraicDifferentialEquation(sequence, K) {
   });
 
   N -= Math.max(0, K - 2);
-  const mat = Array.from({ length: N }, (_, i) =>
+  const mat: number[][] = Array.from({ length: N }, (_, i) =>
     basis.map(b => b[i] ?? 0)
   );
 
-  const used = Array(N).fill(false);
+  const used: boolean[] = Array(N).fill(false);
   for (let i = 0; i < mat[0].length; i++) {
     let pivot = 0;
     while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0)) pivot++;
@@ -206,7 +206,7 @@ export function findAlgebraicDifferentialEquation(sequence, K) {
     }
     if (!found) continue;
 
-    const v = Array(basis.length).fill(0);
+    const v: number[] = Array(basis.length).fill(0);
     v[i] = 1;
     for (let j = 0; j < mat.length; j++) {
       if (mat[j][i] !== 0) {
@@ -223,7 +223,7 @@ export function findAlgebraicDifferentialEquation(sequence, K) {
 }
 
 
-function dfs(partition, cur, id, K) {
+function dfs(partition: number[][], cur: number[], id: number, K: number) {
   if (id === cur.length) {
     partition.push([...cur]);
     return;
@@ -235,10 +235,10 @@ function dfs(partition, cur, id, K) {
 }
 
 
-function differentiate(a, k = 1) {
+function differentiate(a: number[], k: number = 1): number[] {
   let df = [...a];
   for (let t = 0; t < k; t++) {
-    const next = new Array(df.length).fill(0);
+    const next: number[] = new Array(df.length).fill(0);
     for (let i = 0; i + 1 < df.length; i++) {
       next[i] = df[i + 1] * (i + 1) % mod;
     }
@@ -248,8 +248,8 @@ function differentiate(a, k = 1) {
 }
 
 
-function extendSequenceFromPolynomialRecurrence(n, coeffs, terms) {
-  let ret = new Array(Math.max(n + 1, terms.length)).fill(0);
+function extendSequenceFromPolynomialRecurrence(n: number, coeffs: number[][], terms: number[]): number[] {
+  let ret: number[] = new Array(Math.max(n + 1, terms.length)).fill(0);
   for (let i = 0; i < terms.length; i++) ret[i] = terms[i];
 
   const order = coeffs.length - 1;
@@ -284,7 +284,7 @@ function extendSequenceFromPolynomialRecurrence(n, coeffs, terms) {
   return ret;
 }
 
-export function analyzePolynomialRecurrence(n, terms, degree) {
+export function analyzePolynomialRecurrence(n: number, terms: number[], degree: number) {
   if (terms.length === 0) {
     return { error: "Extended Sequence:\n(No input terms)" };
   }
@@ -306,14 +306,14 @@ export function analyzePolynomialRecurrence(n, terms, degree) {
       polynomialRecurrenceEquation: generatePolynomialRecurrenceEquationString(coeffs, order, deg),
       sequence: result_string
     };
-  } catch (e) {
+  } catch (e: any) {
     return { error: 'Error: ' + e.message };
   }
 }
 
 
-function generatePolynomialRecurrenceEquationString(coeffs, order, deg) {
-  const w = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
+function generatePolynomialRecurrenceEquationString(coeffs: number[][], order: number, deg: number): string {
+  const w: number[][] = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0));
   for (let i = 0; i <= order; i++) {
     for (let d = 0; d <= deg; d++) {
       const c = coeffs[i][d];
@@ -327,9 +327,9 @@ function generatePolynomialRecurrenceEquationString(coeffs, order, deg) {
     }
   }
 
-  let equation_parts = [];
+  let equation_parts: string[] = [];
   for (let i = 0; i <= order; i++) {
-    let poly_parts = [];
+    let poly_parts: string[] = [];
     for (let d = deg; d >= 0; d--) {
       let val = w[i][d];
       if (val === 0) continue;
@@ -396,7 +396,7 @@ function generatePolynomialRecurrenceEquationString(coeffs, order, deg) {
 }
 
 
-export function analyzeAlgebraicRecurrence(n, terms, degree) {
+export function analyzeAlgebraicRecurrence(n: number, terms: number[], degree: number) {
   if (terms.length === 0) {
     return { error: "Algebraic Recurrence:\n(No input terms)" };
   }
@@ -415,15 +415,15 @@ export function analyzeAlgebraicRecurrence(n, terms, degree) {
       algebraicRecurrenceEquation: algebraicRecurrenceEquation,
       sequence: result_string
     };
-  } catch (e) {
+  } catch (e: any) {
     return { error: 'Error: ' + e.message };
   }
 }
 
-export function generateAlgebraicRecurrenceEquationString(coeffs, deg) {
-  const poly_strings = [];
+export function generateAlgebraicRecurrenceEquationString(coeffs: number[][], deg: number): string {
+  const poly_strings: string[] = [];
   for (let i = 0; i < coeffs.length; i++) {
-    const terms = [];
+    const terms: { sign: string; term: string }[] = [];
     for (let j = 0; j <= deg; j++) {
       let val = coeffs[i][j];
       if (val === 0) continue;
@@ -471,20 +471,20 @@ export function generateAlgebraicRecurrenceEquationString(coeffs, deg) {
   return poly_strings.join(" + ").replace(/\+ -/g, ' - ') + " = 0";
 }
 
-export function findAlgebraicEquation(sequence, D) {
+export function findAlgebraicEquation(sequence: number[], D: number): number[][] {
   const N = sequence.length;
   const K = Math.min(Math.floor(N / (D + 1)), N);
   if (K <= 1) {
     throw new Error("Could not find algebraic recurrence");
   }
 
-  const A = Array.from({ length: K }, () => Array(N).fill(0));
+  const A: number[][] = Array.from({ length: K }, () => Array(N).fill(0));
   A[0][0] = 1;
   for (let i = 0; i + 1 < K; ++i) {
     A[i + 1] = mulPoly(A[i], sequence).slice(0, N);
   }
 
-  const mat = Array.from({ length: N }, () => Array(K * (D + 1)).fill(0));
+  const mat: number[][] = Array.from({ length: N }, () => Array(K * (D + 1)).fill(0));
   for (let i = 0; i < K; ++i) {
     for (let j = 0; j < N; ++j) {
       for (let k = 0; k <= Math.min(D, j); ++k) {
@@ -493,7 +493,7 @@ export function findAlgebraicEquation(sequence, D) {
     }
   }
 
-  const used = Array(N).fill(false);
+  const used: boolean[] = Array(N).fill(false);
   for (let i = 0; i < mat[0].length; ++i) {
     let pivot = 0;
     while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0)) ++pivot;
@@ -518,7 +518,7 @@ export function findAlgebraicEquation(sequence, D) {
       }
     }
     if (!found) continue;
-    const P = Array.from({ length: K }, () => Array(D + 1).fill(0));
+    const P: number[][] = Array.from({ length: K }, () => Array(D + 1).fill(0));
     P[Math.floor(i / (D + 1))][i % (D + 1)] = 1;
     for (let j = 0; j < N; ++j) {
       if (mat[j][i] !== 0) {
@@ -530,12 +530,12 @@ export function findAlgebraicEquation(sequence, D) {
     normalizeCoefficients(P);
     return P;
   }
-  throw new Error(`Could not find an algebraic equation of degree ${D} for the given ${sequence.length} terms.`);
+  throw new Error(`Could not find algebraic equation of degree ${D} for the given ${sequence.length} terms.`);
 
 }
 
-export function generateAlgebraicDifferentialEquationString(solution) {
-  const polyByFProduct = new Map(); // Key: string representation of f product, Value: array of x coefficients
+export function generateAlgebraicDifferentialEquationString(solution: { partition: number[][]; v: number[] }): string {
+  const polyByFProduct = new Map<string, number[]>(); // Key: string representation of f product, Value: array of x coefficients
 
   for (let i = 0; i < solution.partition.length; i++) {
     let coef = solution.v[i];
@@ -547,7 +547,7 @@ export function generateAlgebraicDifferentialEquationString(solution) {
 
     const p = solution.partition[i];
     let xPower = 0;
-    const fDerivativeOrders = []; // Collect all derivative orders for this term
+    const fDerivativeOrders: number[] = []; // Collect all derivative orders for this term
 
     for (const j of p) {
       if (j === 1) {
@@ -556,13 +556,13 @@ export function generateAlgebraicDifferentialEquationString(solution) {
         fDerivativeOrders.push(j - 2);
       }
     }
-
+    console.log(xPower,fDerivativeOrders,coef);
     // Create a unique key for the f product part
     // Sort to ensure consistent key for same product (e.g., f'f vs ff')
     fDerivativeOrders.sort((a, b) => a - b);
     let fProductKey = "";
     if (fDerivativeOrders.length === 0) {
-      fProductKey = "f^(0)"; // Represents f^0, i.e., no derivative terms, just f
+      fProductKey = ""; //constant term
     } else {
       fProductKey = fDerivativeOrders.map(order => {
         if (order === 0) return "f";
@@ -578,11 +578,12 @@ export function generateAlgebraicDifferentialEquationString(solution) {
     polyByFProduct.set(fProductKey, currentPoly);
   }
 
-  const equationParts = [];
+  const equationParts: string[] = [];
   const sortedFProductKeys = Array.from(polyByFProduct.keys()).sort(); // Sort keys for consistent output
 
   for (const fProductKey of sortedFProductKeys) {
     let polyCoeffs = polyByFProduct.get(fProductKey);
+    if (!polyCoeffs) continue; // Should not happen with sorted keys
     polyCoeffs = polyCoeffs.map(c => (c > mod / 2 ? c - mod : c));
 
     let polyString = polyToLatex(polyCoeffs);
@@ -599,17 +600,23 @@ export function generateAlgebraicDifferentialEquationString(solution) {
       // This assumes the key format is "f^(d1)f^(d2)..."
       fTermString = fProductKey.replace(/f\^\((\d+)\)/g, (match, p1) => {
         if (p1 === "0") return "f"; // f^(0) should be just f
-        return `f^{(${p1})}`; // f^(i) for derivatives
+        return `f^{(${p1})}`; // Using f^(order) for derivatives
       });
     }
 
     let combinedTerm = "";
-    if (polyString === "1") {
+    if (polyString === "1" && fTermString.length != 0) {
       combinedTerm = fTermString;
-    } else if (polyString === "-1") {
+    } else if (polyString === "-1" && fTermString.length != 0) {
       combinedTerm = `-${fTermString}`;
     } else {
-      combinedTerm = `(${polyString})${fTermString}`;
+      // Check if polyString contains multiple terms (i.e., has " + " or " - ")
+      // by checking if " + " or " - " appears after the first character.
+      if (polyString.substring(1).includes(" + ") || polyString.substring(1).includes(" - ")) {
+        combinedTerm = `(${polyString})${fTermString}`;
+      } else {
+        combinedTerm = `${polyString}${fTermString}`;
+      }
     }
     equationParts.push(combinedTerm);
   }
@@ -625,13 +632,13 @@ export function generateAlgebraicDifferentialEquationString(solution) {
 };
 
 
-export const polyToLatex = (coeffs) => {
+export const polyToLatex = (coeffs: number[]): string => {
   const terms = coeffs
     .map((c, i) => {
       if (c === 0) return null;
       const val = Math.abs(c);
 
-      let termString;
+      let termString: string;
       if (i === 0) { // Constant term
         termString = `${val}`;
       } else if (i === 1) { // x term
@@ -654,6 +661,7 @@ export const polyToLatex = (coeffs) => {
   let result = "";
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i];
+    if (!term) continue; // Type guard for filter(Boolean)
     if (i === 0) { // First term
       if (term.sign === '-') {
         result += '-';
@@ -667,7 +675,7 @@ export const polyToLatex = (coeffs) => {
   return result;
 };
 
-export const findRationalFunction = (terms) => {
+export const findRationalFunction = (terms: number[]) => {
   if (terms.some(isNaN)) {
     return { error: "Invalid input: Please enter a comma-separated list of numbers." };
   }
@@ -676,10 +684,10 @@ export const findRationalFunction = (terms) => {
   }
   const N = Math.floor(terms.length / 2);
   const size = 2 * N + 1;
-  let A0 = new Array(size).fill(0);
-  let B0 = new Array(size).fill(0);
-  let A1 = new Array(size).fill(0);
-  let B1 = new Array(size).fill(0);
+  let A0: number[] = new Array(size).fill(0);
+  let B0: number[] = new Array(size).fill(0);
+  let A1: number[] = new Array(size).fill(0);
+  let B1: number[] = new Array(size).fill(0);
 
   A0[2 * N] = 1;
   for (let i = 0; i < 2 * N; i++) A1[i] = terms[i];
@@ -722,9 +730,9 @@ export const findRationalFunction = (terms) => {
   return { P: A1, Q: B1, P_latex: polyToLatex(A1), Q_latex: polyToLatex(B1) };
 };
 
-export function mulPoly(a, b) {
+export function mulPoly(a: number[], b: number[]): number[] {
   const n = a.length, m = b.length;
-  const res = new Array(n + m - 1).fill(0);
+  const res: number[] = new Array(n + m - 1).fill(0);
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < m; j++) {
       res[i + j] = (res[i + j] + a[i] * b[j]) % mod;
@@ -734,8 +742,8 @@ export function mulPoly(a, b) {
 }
 
 
-export const extendSequenceFromLinearRecurrence = (P, Q, initial_terms, n) => {
-  const a = [...initial_terms];
+export const extendSequenceFromLinearRecurrence = (P: number[], Q: number[], initial_terms: number[], n: number): number[] => {
+  const a: number[] = [...initial_terms];
   for (let i = initial_terms.length; i <= n; i++) {
     let next_val = 0;
     if (i < P.length) {
@@ -752,8 +760,8 @@ export const extendSequenceFromLinearRecurrence = (P, Q, initial_terms, n) => {
 // A = sum a[i][j] x^i y^j
 // B = sum b[i][j] x^i y^j
 // return AB mod y^2
-function mul2(a, b) {
-  const c = Array(a.length + b.length - 1).fill(null).map(() => [0, 0]);
+function mul2(a: number[][], b: number[][]): number[][] {
+  const c: number[][] = Array(a.length + b.length - 1).fill(null).map(() => [0, 0]);
   for (let i = 0; i < a.length; ++i) {
     for (let j = 0; j < 2; ++j) {
       for (let k = 0; k < b.length; ++k) {
@@ -768,22 +776,22 @@ function mul2(a, b) {
   return c;
 }
 
-function extendSequenceFromAlgebraicRecurrence(coeffs, terms, n) {
-  let extendedTerms = terms.slice();
+function extendSequenceFromAlgebraicRecurrence(coeffs: number[][], terms: number[], n: number): number[] {
+  let extendedTerms: number[] = terms.slice();
   for (let i = terms.length; i <= n; ++i) {
-    const extendedTerms2 = Array(i + 1).fill(null).map(() => [0, 0]);
+    const extendedTerms2: number[][] = Array(i + 1).fill(null).map(() => [0, 0]);
     for (let j = 0; j < i; ++j) {
       extendedTerms2[j][0] = extendedTerms[j];
     }
     extendedTerms2[i][1] = 1;
 
-    let g = Array(i + 1).fill(null).map(() => [0, 0]);
-    let power = Array(i + 1).fill(null).map(() => [0, 0]);
+    let g: number[][] = Array(i + 1).fill(null).map(() => [0, 0]);
+    let power: number[][] = Array(i + 1).fill(null).map(() => [0, 0]);
     power[0][0] = 1;
 
     for (let j = 0; j < coeffs.length; ++j) {
       for (let k = 0; k < coeffs[j].length; ++k) {
-        let h = Array(i + 1).fill(null).map(() => [0, 0]);
+        let h: number[][] = Array(i + 1).fill(null).map(() => [0, 0]);
         h[k][0] = coeffs[j][k];
         h = mul2(h, power);
         for (let l = 0; l < g.length; ++l) {
@@ -803,17 +811,17 @@ function extendSequenceFromAlgebraicRecurrence(coeffs, terms, n) {
 }
 
 
-export function extendSequenceFromAlgebraicDifferentialEquation(v, partition, terms, n) {
-  let extendedTerms = [...terms];
+export function extendSequenceFromAlgebraicDifferentialEquation(v: number[], partition: number[][], terms: number[], n: number): number[] {
+  let extendedTerms: number[] = [...terms];
   for (let i = terms.length; i <= n; i++) {
     const basis = partition.map(p => {
-      let poly = [[1, 0]];
+      let poly: number[][] = [[1, 0]];
       for (const j of p) {
         if (j === 0) continue;
         else if (j === 1) poly = mul2(poly, [[0, 0], [1, 0]]); // x
         else {
           let df = differentiate(extendedTerms, j - 2);
-          let df2 = Array(i + 1).fill(null).map(() => [0, 0])
+          let df2: number[][] = Array(i + 1).fill(null).map(() => [0, 0])
           for (let k = 0; k < Math.min(df.length, i + 1); ++k) {
             df2[k][0] = df[k];
           }
@@ -823,13 +831,11 @@ export function extendSequenceFromAlgebraicDifferentialEquation(v, partition, te
       }
       return poly;
     });
-    let g = Array(i + 1).fill(null).map(() => [0, 0]);
+    let g: number[][] = Array(i + 1).fill(null).map(() => [0, 0]);
     for (let j = 0; j < basis.length; ++j) {
       for (let k = 0; k < Math.min(i + 1, basis[j].length); ++k) {
-        g[k][0] += v[j] * basis[j][k][0];
-        g[k][1] += v[j] * basis[j][k][1];
-        g[k][0] %= mod;
-        g[k][1] %= mod;
+        g[k][0] = (g[k][0] + v[j] * basis[j][k][0]) % mod;
+        g[k][1] = (g[k][1] + v[j] * basis[j][k][1]) % mod;
       }
     }
     let id = 0;

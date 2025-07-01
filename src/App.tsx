@@ -4,7 +4,7 @@ import './App.css';
 import { BlockMath } from 'react-katex';
 import './App.css';
 import { Link } from 'react-router-dom';
-import { useRecurrenceAnalysis } from './hooks/useRecurrenceAnalysis';
+import { useRecurrenceAnalysis } from './hooks/useRecurrenceAnalysis.ts';
 
 function App() {
   const [copied, setCopied] = useState({});
