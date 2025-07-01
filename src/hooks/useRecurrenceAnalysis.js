@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { analyzePolynomialRecurrence, extendLinearRecurrenceSequence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF } from '../recurrence.js';
+import { analyzePolynomialRecurrence, extendSequenceFromLinearRecurrence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF } from '../recurrence.js';
 
 export const useRecurrenceAnalysis = () => {
   const [sequence, setSequence] = useState('');
@@ -66,7 +66,7 @@ export const useRecurrenceAnalysis = () => {
       setError(rationalFuncResult.error);
     } else {
       setRationalFunction(rationalFuncResult);
-      const extended = extendLinearRecurrenceSequence([], rationalFuncResult.Q, terms, n);
+      const extended = extendSequenceFromLinearRecurrence([], rationalFuncResult.Q, terms, n);
       setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val}`).join('\n'));
     }
 
