@@ -32,7 +32,7 @@ function Examples() {
       <h5>ABC222 H</h5>
       <p><code>0,1,6,47,420,4059</code> <Link to="/?sequence=0,1,6,47,420,4059,41316,436345,737006,535794,665756,678736&degree=1&extendLength=20">Try</Link></p>
 
-      <h2>D-finite (Holonomic)</h2>
+      <h2>D-finite (Polynomial Recurrence/Holonomic)</h2>
       <p>These sequences satisfy a linear recurrence with polynomial coefficients. Their generating functions satisfy a linear differential equation with polynomial coefficients.</p>
       <h5>Factorials</h5>
       <p><code>1, 1, 2, 6, 24, 120, 720</code> <Link to="/?sequence=1,1,2,6,24,120,720&degree=1&extendLength=20">Try</Link></p>

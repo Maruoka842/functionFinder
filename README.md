@@ -1,12 +1,67 @@
-# React + Vite
+# Sequence Recurrence Finder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Project Overview
 
-Currently, two official plugins are available:
+This is a web application designed to find various types of recurrence relations for a given sequence of numbers. It can identify rational, algebraic, polynomial (D-finite/holonomic), and algebraic differential equations that the generating function of a sequence satisfies. The tool also extends the sequence based on the found recurrence relations.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+-   **Rational Recurrence:** Finds linear recurrences with constant coefficients (rational generating functions).
+-   **Algebraic Equation:** Discovers polynomial equations satisfied by the generating function.
+-   **Polynomial Recurrence (D-finite / Holonomic):** Identifies linear recurrences with polynomial coefficients.
+-   **Algebraic Differential Equation:** Finds differential equations satisfied by the generating function.
+-   **Sequence Extension:** Extends the input sequence based on the found recurrence relations.
+-   **Arbitrary-Precision Integer Support:** Handles very large numbers in the input sequence.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Technology Stack
+
+-   **Frontend:** React, TypeScript
+-   **Build Tool:** Vite
+-   **Styling:** Bootstrap
+-   **Mathematics Rendering:** KaTeX
+-   **Testing:** Jest
+
+## Installation and Local Setup
+
+To run this project locally, follow these steps:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Maruoka842/functionFinder.git
+    cd functionFinder
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
+
+## Running Tests
+
+To run the unit tests:
+
+```bash
+npm test
+```
+
+## Deployment to GitHub Pages
+
+This project is configured for deployment to GitHub Pages. The `homepage` field in `package.json` and `base` in `vite.config.ts` are set up for `https://Maruoka842.github.io/functionFinder`.
+
+To deploy the application:
+
+```bash
+npm run deploy
+```
+
+This command will build the project and push the `dist` directory content to the `gh-pages` branch of your repository. The site will then be accessible at the `homepage` URL.
+
+## Contact
+
+If you have any questions or feedback, feel free to reach out to the author on Twitter: [@37zigen](https://x.com/37zigen)

@@ -200,7 +200,8 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
       <Link to="/how-to-use" className="me-3">How to Use</Link>
       <Link to="/algorithms" className="me-3">Learn about the Algorithms</Link>
       <Link to="/examples" className="me-3">Examples</Link>
-      <a href="https://x.com/37zigen" target="_blank" rel="noopener noreferrer">DM OK (Twitter)</a>
+      <a href="https://x.com/37zigen" target="_blank" rel="noopener noreferrer" className="me-3">DM OK (Twitter)</a>
+      <a href="https://github.com/Maruoka842/functionFinder" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
   );
 }
