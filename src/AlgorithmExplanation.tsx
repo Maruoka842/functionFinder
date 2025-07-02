@@ -19,13 +19,13 @@ function AlgorithmExplanation() {
       数列が上のいずれかのクラスであると仮定して関係式を求め、数列を延長します。
       各クラスとも、<InlineMath math={String.raw`1, x, f^2, xf'f''`}/> のような f からできるべき級数が線形従属と言っています。
       従って、アルゴリズムは4つともほぼ同じで、先頭から N 項が与えられたとき、N 個以下の元を選んで、それらが線形独立であるかガウスの消去法で求め、線形従属であった場合はそれを一つ構成します（<a href="https://judge.yosupo.jp/problem/system_of_linear_equations">library checker</a>）。
-      計算量は <InlineMath math={String.raw`O(N^3)`}/> ですが、Rational については Berekamp ＆ Masseyによる <InlineMath math={String.raw`O(N (\log N)^2)`}/> の<a href="https://ieeexplore.ieee.org/document/1054260/">高速なアルゴリズム</a>があります。
+      計算量は <InlineMath math={String.raw`O(N^3)`}/> ですが、Rational については Berlekamp ＆ Masseyによる <InlineMath math={String.raw`O(N (\log N)^2)`}/> の<a href="https://ieeexplore.ieee.org/document/1054260/">高速なアルゴリズム</a>があります。
       D-finite の母関数推定については、Min25さんの解説記事があったのですが、削除されてしまいました。
       </p>
       <p>D-algebraicの場合のこのサイトの計算方法を詳しく説明します。まず、入力で与えられた degree, K に対して、<InlineMath math={String.raw`{K + D \choose D} \leq N - K + 2`}/> を満たす最大の D を求めます。
       そして、<InlineMath math={String.raw`1, x, f, f', f'', \ldots, f^{(K-2)}`}/> を D 回以下掛けて出来る<InlineMath math={String.raw`{K + D \choose D} \leq N - K + 2`}/> 個の級数を列挙して
       <InlineMath math={String.raw`g_1,g_2,\ldots,g_{{K+D \choose D}}`}/> とします。そして、<InlineMath math={String.raw`\sum_{i=1}^N a_ig_i = 0`}/> を各 <InlineMath math={String.raw`x^0,x^1,\ldots,x^{N-K+1}`}/>の係数が 0 であるという条件に分けて行列の核空間を求める問題に帰着すればよいです。
-      Rationalの場合のBerekamp&Masseyについては、母関数の次数があり得るなかで最も短い保証があります。その他の場合について、最も簡単な式を必ず求める方法があるのか、僕は分かっていません。</p>
+      Rationalの場合のBerlekamp&Masseyについては、(分母の次数)≥(分子の次数)となる有理関数のうち分母の次数が最小の保証があります。その他の場合について、最も簡単な式を必ず求める方法があるのか、僕は分かっていません。</p>
       <h1>What for?</h1>
       まず、数列のN項目を求める問題で使えると思います。各クラスごとに機械的に高速な方法があります。
       <ul>
