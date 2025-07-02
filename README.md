@@ -11,7 +11,7 @@ This is a web application designed to find various types of recurrence relations
 -   **Polynomial Recurrence (D-finite / Holonomic):** Identifies linear recurrences with polynomial coefficients.
 -   **Algebraic Differential Equation:** Finds differential equations satisfied by the generating function.
 -   **Sequence Extension:** Extends the input sequence based on the found recurrence relations.
--   **Arbitrary-Precision Integer Support:** Handles very large numbers in the input sequence.
+
 
 ## Technology Stack
 
