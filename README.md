@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a web application designed to find various types of recurrence relations for a given sequence of numbers. It can identify rational, algebraic, polynomial (D-finite/holonomic), and algebraic differential equations that the generating function of a sequence satisfies. The tool also extends the sequence based on the found recurrence relations.
+This is a web application designed to find various types of recurrence relations for a given sequence of numbers. It can identify rational generating function, algebraic equation, polynomial recurrence (D-finite/holonomic), and algebraic differential equation that the generating function of a sequence satisfies. The tool also extends the sequence based on the found recurrence relations.
 
 ## Features
 
