@@ -12,7 +12,7 @@ function AlgorithmExplanation() {
         <li>Rational: ある整数係数多項式 <InlineMath math={String.raw`P(x), Q(x)`}/> を用いて <InlineMath math={String.raw`f(x)=P(x)/Q(x)`}/> と表せる。</li>
         <li>Algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x)`}/> が <InlineMath math={String.raw`P(f(x))=0`}/> を満たす。</li>
         <li>D-finite: <InlineMath math={String.raw`\sum_{i=0}^d a_i f^{(i)} = 0`}/> 満たす整数列 <InlineMath math={String.raw`a \neq (0,\ldots 0)`}/> が存在する。</li>
-        <li>D-algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x_1,x_2,\ldots,x_d)`}/> が <InlineMath math={String.raw`P(x,f,f^{(1)},\ldots,f^{(d)})=0`}/> を満たす。</li>
+        <li>D-algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x_1,x_2,\ldots,x_d)`}/> が <InlineMath math={String.raw`P(x,f,f^{(1)},\ldots,f^{(d-2)})=0`}/> を満たす。</li>
       </ul>
       <p>
       D-algebraic ⊆ D-finite ⊆ Algebraic ⊆ Rational です。このサイトは、<InlineMath math={String.raw`a_0, a_1, a_2, \ldots`}/> の最初のいくつかの項が与えられたとき、
