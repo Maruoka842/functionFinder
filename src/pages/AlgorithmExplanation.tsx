@@ -30,7 +30,7 @@ function AlgorithmExplanation() {
       まず、数列のN項目を求める問題で使えると思います。各クラスごとに機械的に高速な方法があります。
       <ul>
         <li>Rational: Fiduccia, Bostan-Mori で <InlineMath math={String.raw`O(\log N)`}/> </li>
-        <li>Algebraic: あるらしいが未読（<a href="https://arxiv.org/abs/1602.00545">論文</a>）。</li>
+        <li>Algebraic: あるらしいが未読（<a href="https://msp.org/obs/2019/2/p08.xhtml">論文</a>）。</li>
         <li>D-finite: baby-step, giant-step で <InlineMath math={String.raw`O(\sqrt{p}\log p)`}/></li>
         <li>D-algebraic: 分かりません ╮(´•ω•)╭</li>
       </ul>
