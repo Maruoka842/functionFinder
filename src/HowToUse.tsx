@@ -12,7 +12,7 @@ function HowToUse() {
       <p>In the main text area, enter the sequence of numbers you want to analyze. The numbers should be separated by commas. For example: <code>1, -1, 2, -3, 5, -8</code>. Input values are processed using arbitrary-precision integers, so any large value is acceptable.</p>
 
       <h2>2. Setting the Degree</h2>
-      <p>The "Degree" input specifies the maximum degree of the coefficient polynomial for algebraic and polynomial recurrences. For algebraic differential equations, degree `d` specifies that the generating function `f` satisfies a differential equation involving <InlineMath math={String.raw`x, f, f', \dots, f^{(d-2)}`} />. A higher degree may find more complex relationships but will take longer to compute.</p>
+      <p>The "Degree" input specifies the maximum degree of the coefficient polynomial for algebraic and polynomial recurrences. For algebraic differential equations, degree d specifies that the generating function f satisfies a differential equation involving <InlineMath math={String.raw`x, f, f', \dots, f^{(d-2)}`} />. A higher degree may find more complex relationships but will take longer to compute.</p>
 
       <h2>3. Setting the Extend Length</h2>
       <p>The "Extend Length" input determines how many terms of the sequence will be generated and displayed based on the found recurrence relations.</p>

@@ -10,7 +10,7 @@ import Examples from './Examples.tsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Router>
+    <Router basename="/functionFinder">
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/algorithms" element={<AlgorithmExplanation />} />
