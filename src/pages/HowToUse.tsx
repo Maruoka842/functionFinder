@@ -34,7 +34,7 @@ function HowToUse() {
         </li>
         <li>
           <strong>Algebraic Differential Equation: </strong>
-          This finds a differential equation that the generating function satisfies. For example: <code>(1-x)f' + f = 0</code>. This search both ordinary generating function and exponentially generating function.
+          This finds a differential equation that the generating function satisfies. For example: <code>(1-x)f' + f = 0</code>. This searches both ordinary generating function and exponentially generating function.
         </li>
       </ul>
 
