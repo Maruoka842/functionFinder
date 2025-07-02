@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import 'katex/dist/katex.min.css';
-import './App.css';
+import './styles/App.css';
 import { BlockMath } from 'react-katex';
-import './App.css';
+import './styles/App.css';
 import { Link } from 'react-router-dom';
 import { useRecurrenceAnalysis } from './hooks/useRecurrenceAnalysis.ts';
 

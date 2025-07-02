@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { analyzePolynomialRecurrence, extendSequenceFromLinearRecurrence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF, extendSequenceFromAlgebraicDifferentialEquation, FACTORIAL } from '../recurrence.ts';
+import { analyzePolynomialRecurrence, extendSequenceFromLinearRecurrence, analyzeAlgebraicRecurrence, findRationalFunction, mod, findAlgebraicDifferentialEquation, generateAlgebraicDifferentialEquationString, transformToEGF, extendSequenceFromAlgebraicDifferentialEquation, FACTORIAL } from '../logic/recurrence.ts';
 
 interface RationalFunctionResult {
   P: number[];

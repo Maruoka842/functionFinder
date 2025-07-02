@@ -8,7 +8,7 @@ function Examples() {
       <p>Here are some examples of sequences you can try in the Sequence Recurrence Finder, categorized by the type of recurrence they satisfy:</p>
 
       <h2>Rational</h2>
-      <p>These sequences satisfy a linear recurrence with constant coefficients. Their generating functions are rational functions (P(x)/Q(x)).</p>
+      <p>These sequences satisfy a linear recurrence with constant coefficients. Their generating functions are rational functions P(x)/Q(x).</p>
       <h5>Constant nummbers</h5>
       <p><code>1, 1, 1, 1, 1, 1, 1, 1, 1, 1</code> <Link to="/?sequence=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1&degree=3&extendLength=20">Try</Link></p>
 
