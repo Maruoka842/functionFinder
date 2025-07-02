@@ -348,7 +348,7 @@ function generatePolynomialRecurrenceEquationString(coeffs: number[][], order: n
       }
 
       if (d > 0) {
-        term_str += (d === 1) ? "m" : `m^{${d}}`;
+        term_str += (d === 1) ? "n" : `n^{${d}}`;
       }
       poly_parts.push(term_str);
     }
@@ -362,7 +362,7 @@ function generatePolynomialRecurrenceEquationString(coeffs: number[][], order: n
         poly_str = "-" + poly_str.substring(1).trim();
       }
 
-      const term_name = (i === 0) ? "a_m" : `a_{m-${i}}`;
+      const term_name = (i === 0) ? "a_n" : `a_{n-${i}}`;
       let final_term_str = "";
 
       if (poly_str === "1") {
@@ -556,7 +556,7 @@ export function generateAlgebraicDifferentialEquationString(solution: { partitio
         fDerivativeOrders.push(j - 2);
       }
     }
-    // Create a unique key for the f product part
+    // Create a unique key for the f product part 
     // Sort to ensure consistent key for same product (e.g., f'f vs ff')
     fDerivativeOrders.sort((a, b) => a - b);
     let fProductKey = "";
@@ -771,7 +771,6 @@ export const findRationalFunction = (terms: number[]) => {
 
 export function mulPoly(a: number[], b: number[]): number[] {
   const n = a.length, m = b.length;
-  if (n === 0 || m === 0) return [];
   const res: number[] = new Array(n + m - 1).fill(0);
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < m; j++) {

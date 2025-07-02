@@ -140,6 +140,20 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
         </div>
       )}
 
+      {polynomialRecurrenceResult && !polynomialRecurrenceResult.error && (
+        <div className="alert alert-info mt-4 position-relative" role="alert">
+          <p>Polynomial Recurrence:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation, 'polynomial')}>{copied['polynomial'] ? 'Copied!' : 'Copy'}</button>
+          <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
+          <p>Extended Sequence:</p>
+          <pre className="extended-sequence-output">{
+            typeof polynomialRecurrenceResult.sequence === 'string' 
+              ? polynomialRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
+              : ''
+          }</pre>
+        </div>
+      )}
+
       {polynomialRecurrenceError && (
         <div className="alert alert-danger mt-4" role="alert">
           <p>Polynomial Recurrence:</p> {polynomialRecurrenceError}
@@ -186,7 +200,7 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
       <Link to="/how-to-use" className="me-3">How to Use</Link>
       <Link to="/algorithms" className="me-3">Learn about the Algorithms</Link>
       <Link to="/examples" className="me-3">Examples</Link>
-      <a href="https://x.com/37zigen" target="_blank" rel="noopener noreferrer">Contact Author (Twitter)</a>
+      <a href="https://x.com/37zigen" target="_blank" rel="noopener noreferrer">DM OK (Twitter)</a>
     </div>
   );
 }
