@@ -22,7 +22,7 @@ function HowToUse() {
       <ul>
         <li>
           <strong>Constant Recurrence (Rational Generating Function): </strong>
-          This finds a linear recurrence with constant coefficients, which means the generating function is a rational function (a fraction of two polynomials, P(x)/Q(x)).
+          This finds a linear recurrence with constant coefficients, which means the generating function is a rational function (a fraction of two polynomials, P(x)/Q(x).
         </li>
         <li>
           <strong>Algebraic Equation: </strong>
@@ -30,7 +30,7 @@ function HowToUse() {
         </li>
         <li>
           <strong>Polynomial Recurrence (D-finite / Holonomic): </strong>
-          This finds a linear recurrence where the coefficients are polynomials in the index `n`. In other words, the generating function satisfies a differential equation whose coefficients are polynomials.
+          This finds a linear recurrence where the coefficients are polynomials of the index of the sequence. In other words, the generating function satisfies a differential equation whose coefficients are polynomials.
         </li>
         <li>
           <strong>Algebraic Differential Equation: </strong>
