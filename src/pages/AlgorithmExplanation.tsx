@@ -10,8 +10,8 @@ function AlgorithmExplanation() {
       <p>数列 <InlineMath math={String.raw`a_0, a_1, a_2, \ldots`}/>を母関数<InlineMath math={String.raw`f(x) = \sum_{i=0}^\infty a_i x^i`}/>によって次のように分類します。</p>
       <ul>
         <li>Rational: ある整数係数多項式 <InlineMath math={String.raw`P(x), Q(x)`}/> を用いて <InlineMath math={String.raw`f(x)=P(x)/Q(x)`}/> と表せる。</li>
-        <li>Algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x)`}/> が <InlineMath math={String.raw`P(f(x))=0`}/> を満たす。</li>
-        <li>D-finite: <InlineMath math={String.raw`\sum_{i=0}^d a_i f^{(i)} = 0`}/> 満たす整数列 <InlineMath math={String.raw`a \neq (0,\ldots 0)`}/> が存在する。</li>
+        <li>Algebraic: ある非零の2変数整数係数多項式 <InlineMath math={String.raw`P(x,y)`}/> が <InlineMath math={String.raw`P(x,f(x))=0`}/> を満たす。</li>
+        <li>D-finite: <InlineMath math={String.raw`\sum_{i=0}^d a_i f^{(i)} = 0`}/> を満たす整数係数多項式の列 <InlineMath math={String.raw`a \neq (0,\ldots 0)`}/> が存在する。</li>
         <li>D-algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x_1,x_2,\ldots,x_d)`}/> が <InlineMath math={String.raw`P(x,f,f^{(1)},\ldots,f^{(d-2)})=0`}/> を満たす。</li>
       </ul>
       <p>
