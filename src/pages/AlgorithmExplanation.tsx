@@ -15,7 +15,7 @@ function AlgorithmExplanation() {
         <li>D-algebraic: ある非零の整数係数多項式 <InlineMath math={String.raw`P(x_1,x_2,\ldots,x_d)`}/> が <InlineMath math={String.raw`P(x,f,f^{(1)},\ldots,f^{(d-2)})=0`}/> を満たす。</li>
       </ul>
       <p>
-      D-algebraic ⊆ D-finite ⊆ Algebraic ⊆ Rational です。このサイトは、<InlineMath math={String.raw`a_0, a_1, a_2, \ldots`}/> の最初のいくつかの項が与えられたとき、
+      Rational ⊆ Algebraic ⊆ D-finite ⊆ D-algebraic です。このサイトは、<InlineMath math={String.raw`a_0, a_1, a_2, \ldots`}/> の最初のいくつかの項が与えられたとき、
       数列が上のいずれかのクラスであると仮定して関係式を求め、数列を延長します。
       各クラスとも、<InlineMath math={String.raw`1, x, f^2, xf'f''`}/> のような f からできるべき級数が線形従属と言っています。
       従って、アルゴリズムは4つともほぼ同じで、先頭から N 項が与えられたとき、N 個以下の元を選んで、それらが線形独立であるかガウスの消去法で求め、線形従属であった場合はそれを一つ構成します（<a href="https://judge.yosupo.jp/problem/system_of_linear_equations">library checker</a>）。
@@ -31,7 +31,7 @@ function AlgorithmExplanation() {
       <ul>
         <li>Rational: Fiduccia, Bostan-Mori で <InlineMath math={String.raw`O(\log N)`}/> </li>
         <li>Algebraic: あるらしいが未読（<a href="https://msp.org/obs/2019/2/p08.xhtml">論文</a>）。</li>
-        <li>D-finite: baby-step, giant-step で <InlineMath math={String.raw`O(\sqrt{p}\log p)`}/></li>
+        <li>D-finite: baby-step, giant-step で <InlineMath math={String.raw`O(\sqrt{N}\log p)`}/></li>
         <li>D-algebraic: 分かりません ╮(´•ω•)╭</li>
       </ul>
       <p>また、微分方程式から母関数が求まったり、Newton法ができたりすることもあるでしょう。</p>
