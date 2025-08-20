@@ -45,7 +45,7 @@ function App() {
     }
 
 
-    const appUrl = `${window.location.origin}${window.location.pathname}?sequence=${encodeURIComponent(sequence)}&degree=${encodeURIComponent(degree)}&extendLength=${encodeURIComponent(extendLength)}`;
+    const appUrl = `${window.location.origin}${window.location.pathname}?sequence=${encodeURIComponent(sequence)}&degree=${encodeURIComponent(degree)}&extendLength=${encodeURIComponent(extendLength)}&mod=${encodeURIComponent(mod)}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetContent + ` ${appUrl}`)}`;
     window.open(twitterUrl, '_blank');
   };
