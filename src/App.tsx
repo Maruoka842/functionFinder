@@ -12,6 +12,7 @@ function App() {
     sequence, setSequence,
     degree, setDegree,
     extendLength, setExtendLength,
+    mod, setMod,
     error, setError,
     polynomialRecurrenceError, setPolynomialRecurrenceError,
     algebraicRecurrenceError, setAlgebraicRecurrenceError,
@@ -80,7 +81,7 @@ function App() {
                 type="number"
                 className="form-control"
                 id="degreeInput"
-                value={degree}
+                value={degree.toString()}
                 onChange={(e) => {
                     const newValue = parseInt(e.target.value, 10);
                     if (isNaN(newValue) || newValue < 0) {
@@ -97,7 +98,7 @@ function App() {
                 type="number"
                 className="form-control"
                 id="extendLengthInput"
-                value={extendLength}
+                value={extendLength.toString()}
                 onChange={(e) => {
                     const newValue = parseInt(e.target.value, 10);
                     if (isNaN(newValue) || newValue < 0) {
@@ -108,10 +109,26 @@ function App() {
                 }}
             />
         </div>
+        <div className="col">
+            <label htmlFor="modInput" className="form-label">Mod:</label>
+            <input
+                type="number"
+                className="form-control"
+                id="modInput"
+                value={mod.toString()}
+                onChange={(e) => {
+                    const newValue = parseInt(e.target.value, 10);
+                    if (isNaN(newValue) || newValue <= 1) {
+                        setMod('2');
+                    } else {
+                        setMod(e.target.value);
+                    }
+                }}
+            />
+        </div>
       </div>
       <button className="btn btn-primary" onClick={handleFindAll}>Find The Recurrence</button>
       <button className="btn btn-info ms-2" onClick={handleTweet}>Tweet Results</button>
-      <p className="text-muted mt-2">Calculations are performed modulo the prime p = 1000003.</p>
 
       {rationalFunction && (
         <div className="alert alert-info mt-4 position-relative" role="alert">

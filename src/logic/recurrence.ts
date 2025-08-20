@@ -1,25 +1,23 @@
-export const mod: bigint = 1000003n;
-
 const abs = (n: bigint) => (n < 0n ? -n : n);
 const max = (...args: bigint[]) => args.reduce((m, c) => m > c ? m : c);
 const min = (...args: bigint[]) => args.reduce((m, c) => m < c ? m : c);
 
-export const FACTORIAL: bigint[] = (() => {
+export function getFactorialArray(mod: bigint): bigint[] {
   const MAX = 10000;
   const fact: bigint[] = Array(MAX).fill(1n);
   for (let i = 1; i < MAX; i++) {
     fact[i] = (fact[i - 1] * BigInt(i)) % mod;
   }
   return fact;
-})();
-
-export function modPow(a: bigint, n: bigint): bigint {
-  if (n === 0n) return 1n;
-  return (modPow((a * a) % mod, n / 2n) * (n % 2n === 1n ? a : 1n)) % mod;
 }
 
-export function modInv(a: bigint): bigint {
-  return modPow(a, mod - 2n);
+export function modPow(a: bigint, n: bigint, mod: bigint): bigint {
+  if (n === 0n) return 1n;
+  return (modPow((a * a) % mod, n / 2n, mod) * (n % 2n === 1n ? a : 1n)) % mod;
+}
+
+export function modInv(a: bigint, mod: bigint): bigint {
+  return modPow(a, mod - 2n, mod);
 }
 
 function gcd(a: bigint, b: bigint): bigint {
@@ -27,12 +25,12 @@ function gcd(a: bigint, b: bigint): bigint {
   return gcd(b % a, a);
 }
 
-function comb(n: number, k: number): bigint {
+function comb(n: number, k: number, mod: bigint, factorial: bigint[]): bigint {
   if (k < 0 || k > n) return 0n;
-  return (FACTORIAL[n] * modInv((FACTORIAL[k] * FACTORIAL[n - k]) % mod)) % mod;
+  return (factorial[n] * modInv((factorial[k] * factorial[n - k]) % mod, mod)) % mod;
 }
 
-function normalizeCoefficients(coeffs: bigint[][]): bigint[][] {
+function normalizeCoefficients(coeffs: bigint[][], mod: bigint): bigint[][] {
   let normalizer = 1n;
   let ABS = mod;
   for (let a = 1n; a < 100n; ++a) {
@@ -56,7 +54,7 @@ function normalizeCoefficients(coeffs: bigint[][]): bigint[][] {
   return coeffs;
 }
 
-function findPolynomialRecurrence(terms: bigint[], deg: number) {
+function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
   const n = terms.length;
   const B = Math.floor((n + 2) / (deg + 2));
   const C = B * (deg + 1);
@@ -91,7 +89,7 @@ function findPolynomialRecurrence(terms: bigint[], deg: number) {
       [mat[rank], mat[pivot]] = [mat[pivot], mat[rank]];
     }
 
-    const inv = modInv(mat[rank][x]);
+    const inv = modInv(mat[rank][x], mod);
     for (let x2 = x; x2 < C; ++x2) {
       mat[rank][x2] = (mat[rank][x2] * inv) % mod;
     }
@@ -131,7 +129,7 @@ function findPolynomialRecurrence(terms: bigint[], deg: number) {
     ret[k][d] = (mod - mat[y][rank]) % mod;
   }
 
-  normalizeCoefficients(ret);
+  normalizeCoefficients(ret, mod);
 
   return {
     coeffs: ret,
@@ -142,15 +140,15 @@ function findPolynomialRecurrence(terms: bigint[], deg: number) {
   };
 }
 
-export function transformToEGF(terms: bigint[]): bigint[] {
+export function transformToEGF(terms: bigint[], mod: bigint, factorial: bigint[]): bigint[] {
   const egfTerms: bigint[] = [];
   for (let i = 0; i < terms.length; i++) {
-    if (FACTORIAL[i] === 0n) {
+    if (factorial[i] === 0n) {
       // This case should ideally not happen with mod being prime and i < mod
       // but as a safeguard against division by zero if FACTORIAL[i] somehow becomes 0 mod mod
       throw new Error('Factorial is zero modulo mod, cannot compute EGF term.');
     }
-    const invFactorial = modInv(FACTORIAL[i]);
+    const invFactorial = modInv(factorial[i], mod);
     egfTerms.push((terms[i] * invFactorial) % mod);
   }
   return egfTerms;
@@ -158,16 +156,18 @@ export function transformToEGF(terms: bigint[]): bigint[] {
 
 export function findAlgebraicDifferentialEquation(
   sequence: bigint[],
-  K: number
+  K: number,
+  mod: bigint,
+  factorial: bigint[]
 ) {
   let N = sequence.length;
   let deg = 0;
-  while (comb(deg + 1 + K, deg + 1) <= BigInt(N - Math.max(0, K - 2))) deg++;
+  while (comb(deg + 1 + K, deg + 1, mod, factorial) <= BigInt(N - Math.max(0, K - 2))) deg++;
   if (deg === 0) {
     throw new Error('Could not find algebraic differential equation.');
   }
 
-  const totalPartition = comb(deg + K, deg);
+  const totalPartition = comb(deg + K, deg, mod, factorial);
   const partition: number[][] = [];
   dfs(partition, Array(deg).fill(0), 0, K);
 
@@ -175,8 +175,8 @@ export function findAlgebraicDifferentialEquation(
     let poly: bigint[] = [1n];
     for (const j of p) {
       if (j === 0) continue; // 1
-      else if (j === 1) poly = mulPoly(poly, [0n, 1n]); // x
-      else poly = mulPoly(poly, differentiate(sequence, j - 2)); // y^{(j-2)}
+      else if (j === 1) poly = mulPoly(poly, [0n, 1n], mod); // x
+      else poly = mulPoly(poly, differentiate(sequence, mod, j - 2), mod); // y^{(j-2)}
       poly = poly.slice(0, N);
     }
     return poly.slice(0, N);
@@ -197,7 +197,7 @@ export function findAlgebraicDifferentialEquation(
 
     for (let np = 0; np < mat.length; np++) {
       if (np !== pivot && mat[np][i] !== 0n) {
-        const c = (mat[np][i] * modInv(mat[pivot][i])) % mod;
+        const c = (mat[np][i] * modInv(mat[pivot][i], mod)) % mod;
         for (let j = 0; j < mat[np].length; j++) {
           mat[np][j] = (mat[np][j] - (mat[pivot][j] * c) % mod + mod) % mod;
         }
@@ -222,10 +222,10 @@ export function findAlgebraicDifferentialEquation(
       if (mat[j][i] !== 0n) {
         let ni = 0;
         while (mat[j][ni] === 0n) ni++;
-        v[ni] = (-mat[j][i] * modInv(mat[j][ni]) % mod + mod) % mod;
+        v[ni] = (-mat[j][i] * modInv(mat[j][ni], mod) % mod + mod) % mod;
       }
     }
-    normalizeCoefficients([v]);
+    normalizeCoefficients([v], mod);
     return { partition, v };
   }
 
@@ -243,7 +243,7 @@ function dfs(partition: number[][], cur: number[], id: number, K: number) {
   }
 }
 
-function differentiate(a: bigint[], k: number = 1): bigint[] {
+function differentiate(a: bigint[], mod: bigint, k: number = 1): bigint[] {
   let df = [...a];
   for (let t = 0; t < k; t++) {
     const next: bigint[] = new Array(df.length).fill(0n);
@@ -258,7 +258,8 @@ function differentiate(a: bigint[], k: number = 1): bigint[] {
 function extendSequenceFromPolynomialRecurrence(
   n: number,
   coeffs: bigint[][],
-  terms: bigint[]
+  terms: bigint[],
+  mod: bigint
 ): bigint[] {
   let ret: bigint[] = new Array(Math.max(n + 1, terms.length)).fill(0n);
   for (let i = 0; i < terms.length; i++) ret[i] = terms[i];
@@ -289,7 +290,7 @@ function extendSequenceFromPolynomialRecurrence(
       mpow = (mpow * BigInt(m)) % mod;
     }
 
-    ret[m] = ((mod - s) * modInv((denom + mod) % mod)) % mod;
+    ret[m] = ((mod - s) * modInv((denom + mod) % mod, mod)) % mod;
     if (ret[m] < 0n) ret[m] += mod;
   }
   return ret;
@@ -297,20 +298,22 @@ function extendSequenceFromPolynomialRecurrence(
 
 export function analyzePolynomialRecurrence(
   n: number,
-  terms: number[],
-  degree: number
+  terms: bigint[],
+  degree: number,
+  mod: bigint
 ) {
   if (terms.length === 0) {
     return { error: 'Extended Sequence:\n(No input terms)' };
   }
   try {
-    const bigIntTerms = terms.map(BigInt);
-    const relation = findPolynomialRecurrence(bigIntTerms, degree);
+    const relation = findPolynomialRecurrence(terms, degree, mod);
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
+    const factorial = getFactorialArray(mod);
     const extended_terms = extendSequenceFromPolynomialRecurrence(
       n,
       coeffs,
-      bigIntTerms
+      terms,
+      mod
     );
 
     let info_string = `verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
@@ -326,7 +329,9 @@ export function analyzePolynomialRecurrence(
       polynomialRecurrenceEquation: generatePolynomialRecurrenceEquationString(
         coeffs,
         order,
-        deg
+        deg,
+        mod,
+        factorial
       ),
       sequence: result_string,
     };
@@ -338,7 +343,9 @@ export function analyzePolynomialRecurrence(
 function generatePolynomialRecurrenceEquationString(
   coeffs: bigint[][],
   order: number,
-  deg: number
+  deg: number,
+  mod: bigint,
+  factorial: bigint[]
 ): string {
   const w: bigint[][] = Array.from({ length: order + 1 }, () =>
     Array(deg + 1).fill(0n)
@@ -349,8 +356,8 @@ function generatePolynomialRecurrenceEquationString(
       if (c === 0n) continue;
       for (let k = 0; k <= d; k++) {
         const sign = (d - k) % 2 === 0 ? 1n : mod - 1n;
-        const power = modPow(BigInt(i), BigInt(d - k));
-        const term = (comb(d, k) * sign) % mod;
+        const power = modPow(BigInt(i), BigInt(d - k), mod);
+        const term = (comb(d, k, mod, factorial) * sign) % mod;
         w[i][k] = (w[i][k] + (((c * term) % mod) * power) % mod) % mod;
       }
     }
@@ -425,26 +432,29 @@ function generatePolynomialRecurrenceEquationString(
 
 export function analyzeAlgebraicRecurrence(
   n: number,
-  terms: number[],
-  degree: number
+  terms: bigint[],
+  degree: number,
+  mod: bigint
 ) {
   if (terms.length === 0) {
     return { error: 'Algebraic Recurrence:\n(No input terms)' };
   }
   try {
-    const bigIntTerms = terms.map(BigInt);
     const algebraic_relation_coeffs = findAlgebraicEquation(
-      bigIntTerms,
-      degree
+      terms,
+      degree,
+      mod
     );
     const algebraicRecurrenceEquation = generateAlgebraicRecurrenceEquationString(
       algebraic_relation_coeffs,
-      degree
+      degree,
+      mod
     );
     const extended_terms = extendSequenceFromAlgebraicRecurrence(
       algebraic_relation_coeffs,
-      bigIntTerms,
-      n
+      terms,
+      n,
+      mod
     ); // Extend by 5 terms for demonstration
 
     let result_string = `Extended Sequence:\n`;
@@ -464,7 +474,8 @@ export function analyzeAlgebraicRecurrence(
 
 export function generateAlgebraicRecurrenceEquationString(
   coeffs: bigint[][],
-  deg: number
+  deg: number,
+  mod: bigint
 ): string {
   const poly_strings: string[] = [];
   for (let i = 0; i < coeffs.length; i++) {
@@ -518,7 +529,8 @@ export function generateAlgebraicRecurrenceEquationString(
 
 export function findAlgebraicEquation(
   sequence: bigint[],
-  D: number
+  D: number,
+  mod: bigint
 ): bigint[][] {
   const N = sequence.length;
   const K = Math.min(Math.floor(N / (D + 1)), N);
@@ -529,7 +541,7 @@ export function findAlgebraicEquation(
   const A: bigint[][] = Array.from({ length: K }, () => Array(N).fill(0n));
   A[0][0] = 1n;
   for (let i = 0; i + 1 < K; ++i) {
-    A[i + 1] = mulPoly(A[i], sequence).slice(0, N);
+    A[i + 1] = mulPoly(A[i], sequence, mod).slice(0, N);
   }
 
   const mat: bigint[][] = Array.from({ length: N }, () =>
@@ -552,7 +564,7 @@ export function findAlgebraicEquation(
     used[pivot] = true;
     for (let npivot = 0; npivot < mat.length; ++npivot) {
       if (mat[npivot][i] !== 0n && npivot !== pivot) {
-        const c = (mat[npivot][i] * modInv(mat[pivot][i])) % mod;
+        const c = (mat[npivot][i] * modInv(mat[pivot][i], mod)) % mod;
         for (let j = 0; j < mat[npivot].length; ++j) {
           mat[npivot][j] =
             (mat[npivot][j] - (mat[pivot][j] * c) % mod + mod) % mod;
@@ -579,10 +591,10 @@ export function findAlgebraicEquation(
         let ni = 0;
         while (mat[j][ni] === 0n) ++ni;
         P[Math.floor(ni / (D + 1))][ni % (D + 1)] =
-          (-mat[j][i] * modInv(mat[j][ni]) % mod + mod) % mod;
+          (-mat[j][i] * modInv(mat[j][ni], mod) % mod + mod) % mod;
       }
     }
-    normalizeCoefficients(P);
+    normalizeCoefficients(P, mod);
     return P;
   }
   throw new Error(`Could not find algebraic equation.`);
@@ -591,7 +603,7 @@ export function findAlgebraicEquation(
 export function generateAlgebraicDifferentialEquationString(solution: {
   partition: number[][];
   v: bigint[];
-}): string {
+}, mod: bigint): string {
   const polyByFProduct = new Map<string, bigint[]>(); // Key: string representation of f product, Value: array of x coefficients
 
   for (let i = 0; i < solution.partition.length; i++) {
@@ -659,7 +671,7 @@ export function generateAlgebraicDifferentialEquationString(solution: {
     if (!polyCoeffs) continue; // Should not happen with sorted keys
     polyCoeffs = polyCoeffs.map((c) => (c > mod / 2n ? c - mod : c));
 
-    let polyString = polyToLatex(polyCoeffs);
+    let polyString = polyToLatex(polyCoeffs, mod);
 
     if (polyString === '') {
       continue;
@@ -708,7 +720,7 @@ export function generateAlgebraicDifferentialEquationString(solution: {
   return finalEquation;
 }
 
-export const polyToLatex = (coeffs: bigint[]): string => {
+export const polyToLatex = (coeffs: bigint[], mod: bigint): string => {
   const terms = coeffs
     .map((c, i) => {
       if (c === 0n) return null;
@@ -756,18 +768,13 @@ export const polyToLatex = (coeffs: bigint[]): string => {
   return result;
 };
 
-export const findRationalFunction = (terms: number[]) => {
-  if (terms.some(isNaN)) {
-    return {
-      error: 'Invalid input: Please enter a comma-separated list of numbers.',
-    };
-  }
+export const findRationalFunction = (terms: bigint[], mod: bigint): { P: bigint[], Q: bigint[], P_latex: string, Q_latex: string, error?: string } => {
   if (terms.length === 0) {
     return { error: 'Invalid input: Sequence cannot be empty.' };
   }
 
   let w = 0;
-  let bigIntTerms = terms.map(BigInt);
+  let bigIntTerms = terms;
   while (bigIntTerms.length > 0 && bigIntTerms[0] === 0n) {
     w++;
     bigIntTerms.shift();
@@ -803,7 +810,7 @@ export const findRationalFunction = (terms: number[]) => {
     }
     for (let i = size - 1; i >= deg; i--) {
       if (A0[i] !== 0n) {
-        const q = (A0[i] * modInv(A1[deg])) % mod;
+        const q = (A0[i] * modInv(A1[deg], mod)) % mod;
         for (let j = 0; i - deg + j < 2 * N + 1; j++) {
           A0[i - deg + j] = (A0[i - deg + j] - A1[j] * q) % mod;
           B0[i - deg + j] = (B0[i - deg + j] - B1[j] * q) % mod;
@@ -814,7 +821,7 @@ export const findRationalFunction = (terms: number[]) => {
     [B0, B1] = [B1, [...B0]];
   }
 
-  const invConst = modInv(B1[0]);
+  const invConst = modInv(B1[0], mod);
   for (let i = 0; i < size; i++) {
     B1[i] = (B1[i] * invConst) % mod;
     A1[i] = (A1[i] * invConst) % mod;
@@ -830,16 +837,16 @@ export const findRationalFunction = (terms: number[]) => {
   A1.length = N;
   B1.length = N + 1;
 
-  let P_latex = polyToLatex(A1);
+  let P_latex = polyToLatex(A1, mod);
   if (w > 0) {
     P_latex = w === 1 ? `x(${P_latex})` : `x^{${w}}(${P_latex})`;
   }
   if (P_latex === '') P_latex = '0'; // Handle case where P is zero after leading zeros removed
 
-  return { P: A1, Q: B1, P_latex: P_latex, Q_latex: polyToLatex(B1) };
+  return { P: A1, Q: B1, P_latex: P_latex, Q_latex: polyToLatex(B1, mod) };
 };
 
-export function mulPoly(a: bigint[], b: bigint[]): bigint[] {
+export function mulPoly(a: bigint[], b: bigint[], mod: bigint): bigint[] {
   const n = a.length,
     m = b.length;
   if (n === 0 || m === 0) {
@@ -858,7 +865,8 @@ export const extendSequenceFromLinearRecurrence = (
   P: bigint[],
   Q: bigint[],
   initial_terms: bigint[],
-  n: number
+  n: number,
+  mod: bigint
 ): bigint[] => {
   const a: bigint[] = [...initial_terms];
   for (let i = initial_terms.length; i <= n; i++) {
@@ -877,7 +885,7 @@ export const extendSequenceFromLinearRecurrence = (
 // A = sum a[i][j] x^i y^j
 // B = sum b[i][j] x^i y^j
 // return AB mod y^2
-function mul2(a: bigint[][], b: bigint[][]): bigint[][] {
+function mul2(a: bigint[][], b: bigint[][], mod: bigint): bigint[][] {
   const c: bigint[][] = Array(a.length + b.length - 1)
     .fill(null)
     .map(() => [0n, 0n]);
@@ -898,7 +906,8 @@ function mul2(a: bigint[][], b: bigint[][]): bigint[][] {
 function extendSequenceFromAlgebraicRecurrence(
   coeffs: bigint[][],
   terms: bigint[],
-  n: number
+  n: number,
+  mod: bigint
 ): bigint[] {
   let extendedTerms: bigint[] = terms.slice();
   for (let i = terms.length; i <= n; ++i) {
@@ -924,20 +933,20 @@ function extendSequenceFromAlgebraicRecurrence(
           .fill(null)
           .map(() => [0n, 0n]);
         h[k][0] = coeffs[j][k];
-        h = mul2(h, power);
+        h = mul2(h, power, mod);
         for (let l = 0; l < g.length; ++l) {
           g[l][0] = (g[l][0] + h[l][0]) % mod;
           g[l][1] = (g[l][1] + h[l][1]) % mod;
         }
       }
-      power = mul2(power, extendedTerms2).slice(0, i + 1);
+      power = mul2(power, extendedTerms2, mod).slice(0, i + 1);
     }
 
     let id = 0;
     while (id < g.length && g[id][1] === 0n) id++;
     if (id === g.length)
       throw new Error('The relation can not determine the sequence uniquely.');
-    extendedTerms[i] = (mod - (modInv(g[id][1]) * g[id][0]) % mod) % mod;
+    extendedTerms[i] = (mod - (modInv(g[id][1], mod) * g[id][0]) % mod) % mod;
   }
   return extendedTerms;
 }
@@ -946,7 +955,9 @@ export function extendSequenceFromAlgebraicDifferentialEquation(
   v: bigint[],
   partition: number[][],
   terms: bigint[],
-  n: number
+  n: number,
+  mod: bigint,
+  factorial: bigint[]
 ): bigint[] {
   let extendedTerms: bigint[] = [...terms];
   for (let i = terms.length; i <= n; i++) {
@@ -958,10 +969,10 @@ export function extendSequenceFromAlgebraicDifferentialEquation(
           poly = mul2(poly, [
             [0n, 0n],
             [1n, 0n],
-          ]);
+          ], mod);
         // x
         else {
-          let df = differentiate(extendedTerms, j - 2);
+          let df = differentiate(extendedTerms, mod, j - 2);
           let df2: bigint[][] = Array(i + 1)
             .fill(null)
             .map(() => [0n, 0n]);
@@ -969,8 +980,8 @@ export function extendSequenceFromAlgebraicDifferentialEquation(
             df2[k][0] = df[k];
           }
           df2[i - (j - 2)][1] =
-            (FACTORIAL[i] * modInv(FACTORIAL[i - (j - 2)])) % mod;
-          poly = mul2(poly, df2);
+            (factorial[i] * modInv(factorial[i - (j - 2)], mod)) % mod;
+          poly = mul2(poly, df2, mod);
         }
       }
       return poly;
@@ -989,7 +1000,7 @@ export function extendSequenceFromAlgebraicDifferentialEquation(
     if (id == g.length) {
       throw new Error('The relation can not determine the sequence uniquely.');
     }
-    extendedTerms[i] = (mod - (modInv(g[id][1]) * g[id][0]) % mod) % mod;
+    extendedTerms[i] = (mod - (modInv(g[id][1], mod) * g[id][0]) % mod) % mod;
   }
   return extendedTerms;
 }
