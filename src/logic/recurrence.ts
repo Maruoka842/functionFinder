@@ -192,7 +192,9 @@ export function findAlgebraicDifferentialEquation(
     let pivot = 0;
     while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0n))
       pivot++;
-    if (pivot === mat.length) continue;
+    if (pivot === mat.length) {
+      continue;
+    }
     used[pivot] = true;
 
     for (let np = 0; np < mat.length; np++) {
@@ -211,10 +213,15 @@ export function findAlgebraicDifferentialEquation(
       if (mat[j][i] !== 0n) {
         let ni = i - 1;
         while (ni >= 0 && mat[j][ni] === 0n) ni--;
-        if (ni >= 0) found = true;
+        if (ni >= 0) {
+          found = true;
+          break;
+        }
       }
     }
-    if (!found) continue;
+    if (!found) {
+      continue;
+    }
 
     const v: bigint[] = Array(basis.length).fill(0n);
     v[i] = 1n;
@@ -578,7 +585,10 @@ export function findAlgebraicEquation(
       if (mat[j][i] !== 0n) {
         let ni = i - 1;
         while (ni >= 0 && mat[j][ni] === 0n) --ni;
-        if (ni >= 0) found = true;
+        if (ni >= 0) {
+          found = true;
+          break;
+        }
       }
     }
     if (!found) continue;

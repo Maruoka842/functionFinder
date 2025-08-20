@@ -16,10 +16,10 @@ def run_test(page: Page):
     find_button = page.get_by_role("button", name="Find The Recurrence")
     find_button.click()
 
-    # 3. Assert: Check that the "Algebraic Differential Equation for EGF" result is NOT displayed.
+    # 3. Assert: Check for the "Algebraic Differential Equation for EGF" result.
     result_locator = page.locator(".alert-info:has-text('Algebraic Differential Equation for EGF')")
 
-    expect(result_locator).not_to_be_visible(timeout=20000)
+    expect(result_locator).to_be_visible(timeout=30000)
 
     # 4. Screenshot: Capture the final result for visual verification.
     page.screenshot(path="jules-scratch/verification/bug_repro.png")

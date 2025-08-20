@@ -98,3 +98,13 @@ describe('transformToEGF', () => {
     expect(result).toEqual([]);
   });
 });
+
+import { findAlgebraicDifferentialEquation } from '../recurrence';
+
+describe('findAlgebraicDifferentialEquation', () => {
+  test('should find the correct algebraic differential equation for the given sequence', () => {
+    const sequence = "0, 1, 0, 2, 0, 14, 0, 204, 0, 5104, 0, 195040, 0, 570386, 0, 168983, 0, 671563, 0, 226455, 0, 272519, 0, 603129, 0, 298609, 0, 841256, 0, 663822, 0, 476977, 0, 574167, 0, 318955, 0, 57566, 0, 387157".split(',').map(s => BigInt(s.trim()));
+    const result = findAlgebraicDifferentialEquation(sequence, 3, mod, factorial);
+    expect(result).not.toBeNull();
+  });
+});

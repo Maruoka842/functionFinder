@@ -96,7 +96,7 @@ export const useRecurrenceAnalysis = () => {
       }
 
       // Rational Function Part
-      const rationalFuncResult = findRationalFunction(terms, modValue);
+    const rationalFuncResult = findRationalFunction([...terms], modValue);
       if (rationalFuncResult.error) {
         setError(rationalFuncResult.error);
       } else {
