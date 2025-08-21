@@ -13,17 +13,17 @@ function App() {
     degree, setDegree,
     extendLength, setExtendLength,
     mod, setMod,
-    error, setError,
-    polynomialRecurrenceError, setPolynomialRecurrenceError,
-    algebraicRecurrenceError, setAlgebraicRecurrenceError,
-    rationalFunction, setRationalFunction,
-    polynomialRecurrenceResult, setPolynomialRecurrenceResult,
-    algebraicRecurrenceResult, setAlgebraicRecurrenceResult,
-    ogfExtendedSequence, setOgfExtendedSequence,
-    algebraicDifferentialEquationResult, setAlgebraicDifferentialEquationResult,
-    algebraicDifferentialEquationError, setAlgebraicDifferentialEquationError,
-    egfAlgebraicDifferentialEquationResult, setEgfAlgebraicDifferentialEquationResult,
-    egfAlgebraicDifferentialEquationError, setEgfAlgebraicDifferentialEquationError,
+    error,
+    polynomialRecurrenceError,
+    algebraicRecurrenceError,
+    rationalFunction,
+    polynomialRecurrenceResult,
+    algebraicRecurrenceResult,
+    ogfExtendedSequence,
+    algebraicDifferentialEquationResult,
+    algebraicDifferentialEquationError,
+    egfAlgebraicDifferentialEquationResult,
+    egfAlgebraicDifferentialEquationError,
     handleFindAll
   } = useRecurrenceAnalysis();
 
@@ -44,13 +44,13 @@ function App() {
       tweetContent += ` P-Rec: ${polynomialRecurrenceResult.polynomialRecurrenceEquation}.\n`;
     }
 
-
     const appUrl = `${window.location.origin}${window.location.pathname}?sequence=${encodeURIComponent(sequence)}&degree=${encodeURIComponent(degree)}&extendLength=${encodeURIComponent(extendLength)}&mod=${encodeURIComponent(mod)}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetContent + ` ${appUrl}`)}`;
     window.open(twitterUrl, '_blank');
   };
 
-  const copyToClipboard = (text, id) => {
+  const copyToClipboard = (text: string | undefined, id: string) => {
+    if (typeof text !== 'string') return;
     navigator.clipboard.writeText(text);
     setCopied({ [id]: true });
     setTimeout(() => setCopied({ [id]: false }), 2000);
@@ -76,55 +76,51 @@ function App() {
 
       <div className="row mb-3">
         <div className="col">
-            <label htmlFor="degreeInput" className="form-label">Degree:</label>
-            <input
-                type="number"
-                className="form-control"
-                id="degreeInput"
-                value={degree.toString()}
-                onChange={(e) => {
-                    const newValue = parseInt(e.target.value, 10);
-                    if (isNaN(newValue) || newValue < 0) {
-                        setDegree('0');
-                    } else {
-                        setDegree(e.target.value);
-                    }
-                }}
-            />
+          <label htmlFor="degreeInput" className="form-label">Degree:</label>
+          <input
+            type="number"
+            className="form-control"
+            id="degreeInput"
+            value={degree}
+            onChange={(e) => {
+              const newValue = parseInt(e.target.value, 10);
+              if (isNaN(newValue) || newValue < 0) {
+                setDegree('0');
+              } else {
+                setDegree(e.target.value);
+              }
+            }}
+          />
         </div>
         <div className="col">
-            <label htmlFor="extendLengthInput" className="form-label">Extend Length:</label>
-            <input
-                type="number"
-                className="form-control"
-                id="extendLengthInput"
-                value={extendLength.toString()}
-                onChange={(e) => {
-                    const newValue = parseInt(e.target.value, 10);
-                    if (isNaN(newValue) || newValue < 0) {
-                        setExtendLength('0');
-                    } else {
-                        setExtendLength(e.target.value);
-                    }
-                }}
-            />
+          <label htmlFor="extendLengthInput" className="form-label">Extend Length:</label>
+          <input
+            type="number"
+            className="form-control"
+            id="extendLengthInput"
+            value={extendLength}
+            onChange={(e) => {
+              const newValue = parseInt(e.target.value, 10);
+              if (isNaN(newValue) || newValue < 0) {
+                setExtendLength('0');
+              } else {
+                setExtendLength(e.target.value);
+              }
+            }}
+          />
         </div>
         <div className="col">
-            <label htmlFor="modInput" className="form-label">Mod:</label>
-            <input
-                type="number"
-                className="form-control"
-                id="modInput"
-                value={mod.toString()}
-                onChange={(e) => {
-                    const newValue = parseInt(e.target.value, 10);
-                    if (isNaN(newValue) || newValue <= 1) {
-                        setMod('2');
-                    } else {
-                        setMod(e.target.value);
-                    }
-                }}
-            />
+          <label htmlFor="modInput" className="form-label">Mod:</label>
+          <input
+            type="text"
+            className="form-control"
+            id="modInput"
+            value={mod}
+            onChange={(e) => {
+              const filteredValue = e.target.value.replace(/[^0-9]/g, '');
+              setMod(filteredValue);
+            }}
+          />
         </div>
       </div>
       <button className="btn btn-primary" onClick={handleFindAll}>Find The Recurrence</button>
@@ -132,8 +128,11 @@ function App() {
 
       {rationalFunction && (
         <div className="alert alert-info mt-4 position-relative" role="alert">
-          <p>Rational Function:</p>          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(`Constant Recursive Relation: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex})
-${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}</button>          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />          <p>Extended Sequence:</p>          <pre className="extended-sequence-output">{ogfExtendedSequence}</pre>
+          <p>Rational Function:</p>
+          <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(`Constant Recursive Relation: (${rationalFunction.P_latex})/(${rationalFunction.Q_latex})\n${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}</button>
+          <BlockMath math={String.raw`\frac{${rationalFunction.P_latex}}{${rationalFunction.Q_latex}}`} />
+          <p>Extended Sequence:</p>
+          <pre className="extended-sequence-output">{ogfExtendedSequence}</pre>
         </div>
       )}
 
@@ -141,11 +140,11 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
         <div className="alert alert-info mt-4 position-relative" role="alert">
           <p>Algebraic Equation:</p>
           <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(algebraicRecurrenceResult.algebraicRecurrenceEquation, 'algebraic')}>{copied['algebraic'] ? 'Copied!' : 'Copy'}</button>
-          <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation} />
+          <BlockMath math={algebraicRecurrenceResult.algebraicRecurrenceEquation || ''} />
           <p>Extended Sequence:</p>
           <pre className="extended-sequence-output">{
-            typeof algebraicRecurrenceResult.sequence === 'string' 
-              ? algebraicRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
+            typeof algebraicRecurrenceResult.sequence === 'string'
+              ? algebraicRecurrenceResult.sequence.replace("Extended Sequence:", "").trim()
               : ''
           }</pre>
         </div>
@@ -161,11 +160,11 @@ ${ogfExtendedSequence}`, 'rational')}>{copied['rational'] ? 'Copied!' : 'Copy'}<
         <div className="alert alert-info mt-4 position-relative" role="alert">
           <p>Polynomial Recurrence:</p>
           <button className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onClick={() => copyToClipboard(polynomialRecurrenceResult.polynomialRecurrenceEquation, 'polynomial')}>{copied['polynomial'] ? 'Copied!' : 'Copy'}</button>
-          <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation} />
+          <BlockMath math={polynomialRecurrenceResult.polynomialRecurrenceEquation || ''} />
           <p>Extended Sequence:</p>
           <pre className="extended-sequence-output">{
-            typeof polynomialRecurrenceResult.sequence === 'string' 
-              ? polynomialRecurrenceResult.sequence.replace("Extended Sequence:", "").trim() 
+            typeof polynomialRecurrenceResult.sequence === 'string'
+              ? polynomialRecurrenceResult.sequence.replace("Extended Sequence:", "").trim()
               : ''
           }</pre>
         </div>

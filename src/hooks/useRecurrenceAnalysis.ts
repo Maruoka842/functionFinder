@@ -28,7 +28,7 @@ interface AlgebraicDifferentialEquationResult {
 }
 
 interface AlgebraicDifferentialEquationSolution {
-  partition: number[][];
+  partition: bigint[][];
   v: bigint[];
 }
 
@@ -71,95 +71,98 @@ export const useRecurrenceAnalysis = () => {
   }, []);
 
   const handleFindAll = () => {
-    try {
-      setError('');
+    setError('');
+    setPolynomialRecurrenceError('');
+    setAlgebraicRecurrenceError('');
+    setRationalFunction(null);
+    setPolynomialRecurrenceResult(null);
+    setAlgebraicRecurrenceResult(null);
+    setOgfExtendedSequence('');
+    setAlgebraicDifferentialEquationResult(null);
+    setAlgebraicDifferentialEquationError('');
+    setEgfAlgebraicDifferentialEquationResult(null);
+    setEgfAlgebraicDifferentialEquationError('');
+
+    const termsRaw = sequence.split(',').map(s => s.trim()).filter(s => s !== '');
+    if (termsRaw.some(s => !/^-?\d+$/.test(s))) {
+      setError('Invalid input: Please enter a comma-separated list of integers.');
+      return;
+    }
+    const bigIntTerms = termsRaw.map(s => BigInt(s));
+
+    const n = parseInt(extendLength, 10);
+    const d = parseInt(degree, 10);
+    const bigIntMod = BigInt(mod);
+
+    if (isNaN(n) || isNaN(d)) {
+      setError('Invalid input: Please enter valid numbers for degree and extend length.');
+      return;
+    }
+
+    const factorial = getFactorialArray(n + bigIntTerms.length, bigIntMod);
+
+    // Rational Function Part
+    const rationalFuncResult = findRationalFunction(bigIntTerms.slice(), bigIntMod);
+    if (rationalFuncResult.error) {
+      setError(rationalFuncResult.error);
+    } else {
+      setRationalFunction(rationalFuncResult);
+      const extended = extendSequenceFromLinearRecurrence([], rationalFuncResult.Q, bigIntTerms, n, bigIntMod);
+      setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val.toString()}`).join('\n'));
+    }
+
+    // Polynomial Recurrence Part
+    const polyResult = analyzePolynomialRecurrence(n, bigIntTerms, d, bigIntMod);
+    setPolynomialRecurrenceResult(polyResult);
+    if (polyResult.error) {
+      setPolynomialRecurrenceError(polyResult.error);
+    } else {
       setPolynomialRecurrenceError('');
+    }
+
+    // Algebraic Recurrence Part
+    const algResult = analyzeAlgebraicRecurrence(n, bigIntTerms, d, bigIntMod);
+    setAlgebraicRecurrenceResult(algResult);
+    if (algResult.error) {
+      setAlgebraicRecurrenceError(algResult.error);
+    } else {
       setAlgebraicRecurrenceError('');
-      setRationalFunction(null);
-      setPolynomialRecurrenceResult(null);
-      setAlgebraicRecurrenceResult(null);
-      setOgfExtendedSequence('');
-      setAlgebraicDifferentialEquationResult(null);
-      setAlgebraicDifferentialEquationError('');
-      setEgfAlgebraicDifferentialEquationResult(null);
-      setEgfAlgebraicDifferentialEquationError('');
+    }
 
-      const modValue = BigInt(mod);
-      const factorial = getFactorialArray(modValue);
-      const terms = sequence.split(',').map(s => s.trim()).filter(s => s !== '').map(s => BigInt(s));
-
-      const n = parseInt(extendLength, 10);
-      const d = parseInt(degree, 10);
-      if (isNaN(n) || isNaN(d)) {
-        setError('Invalid input: Please enter valid numbers for degree and extend length.');
-        return;
-      }
-
-      // Rational Function Part
-    const rationalFuncResult = findRationalFunction([...terms], modValue);
-      if (rationalFuncResult.error) {
-        setError(rationalFuncResult.error);
+    // Algebraic Differential Equation Part
+    try {
+      const adeqResult: AlgebraicDifferentialEquationSolution | null = findAlgebraicDifferentialEquation(bigIntTerms.slice(), d, bigIntMod);
+      if (adeqResult) {
+        const extended = extendSequenceFromAlgebraicDifferentialEquation(adeqResult.v, adeqResult.partition, bigIntTerms, n, bigIntMod, factorial);
+        setAlgebraicDifferentialEquationResult({
+          equation: generateAlgebraicDifferentialEquationString(adeqResult, bigIntMod),
+          sequence: extended.map((val, i) => `${i}: ${val.toString()}`).join('\n'),
+        });
       } else {
-        setRationalFunction(rationalFuncResult);
-        const extended = extendSequenceFromLinearRecurrence([], rationalFuncResult.Q, terms, n, modValue);
-        setOgfExtendedSequence(extended.map((val, i) => `${i}: ${val}`).join('\n'));
-      }
-
-      // Polynomial Recurrence Part
-      const polyResult = analyzePolynomialRecurrence(n, terms, d, modValue);
-      setPolynomialRecurrenceResult(polyResult);
-      if (polyResult.error) {
-        setPolynomialRecurrenceError(polyResult.error);
-      } else {
-        setPolynomialRecurrenceError('');
-      }
-
-      // Algebraic Recurrence Part
-      const algResult = analyzeAlgebraicRecurrence(n, terms, d, modValue);
-      setAlgebraicRecurrenceResult(algResult);
-      if (algResult.error) {
-        setAlgebraicRecurrenceError(algResult.error);
-      }
-      else {
-        setAlgebraicRecurrenceError('');
-      }
-
-      // Algebraic Differential Equation Part
-      try {
-        const adeqResult: AlgebraicDifferentialEquationSolution | null = findAlgebraicDifferentialEquation(terms, d, modValue, factorial);
-        if (adeqResult) {
-          const extended = extendSequenceFromAlgebraicDifferentialEquation(adeqResult.v, adeqResult.partition, terms, n, modValue, factorial);
-          setAlgebraicDifferentialEquationResult({
-            equation: generateAlgebraicDifferentialEquationString(adeqResult, modValue),
-            sequence: extended.map((val, i) => `${i}: ${val}`).join('\n'),
-          });
-        } else {
-          setAlgebraicDifferentialEquationResult(null);
-          setAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation.');
-        }
-      } catch (e: any) {
-        setAlgebraicDifferentialEquationError('Error: ' + e.message);
-      }
-      // EGF Algebraic Differential Equation of EGF Part
-      try {
-        const egfTerms = transformToEGF(terms, modValue, factorial);
-        const egfAdeqResult: AlgebraicDifferentialEquationSolution | null = findAlgebraicDifferentialEquation(egfTerms, d, modValue, factorial);
-        if (egfAdeqResult) {
-          const extended = extendSequenceFromAlgebraicDifferentialEquation(egfAdeqResult.v, egfAdeqResult.partition, egfTerms, n, modValue, factorial);
-          const ogfExtended = extended.map((val, i) => (val * factorial[i]) % modValue);
-          setEgfAlgebraicDifferentialEquationResult({
-            equation: generateAlgebraicDifferentialEquationString(egfAdeqResult, modValue),
-            sequence: ogfExtended.map((val, i) => `${i}: ${val}`).join('\n'),
-          });
-        } else {
-          setEgfAlgebraicDifferentialEquationResult(null);
-          setEgfAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation for EGF.');
-        }
-      } catch (e: any) {
-        setEgfAlgebraicDifferentialEquationError('Error: ' + e.message);
+        setAlgebraicDifferentialEquationResult(null);
+        setAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation.');
       }
     } catch (e: any) {
-      setError('An unexpected error occurred: ' + e.message);
+      setAlgebraicDifferentialEquationError('Error: ' + e.message);
+    }
+
+    // EGF Algebraic Differential Equation of EGF Part
+    try {
+      const egfTerms = transformToEGF(bigIntTerms.slice(), bigIntMod, factorial);
+      const egfAdeqResult: AlgebraicDifferentialEquationSolution | null = findAlgebraicDifferentialEquation(egfTerms.slice(), d, bigIntMod);
+      if (egfAdeqResult) {
+        const extended = extendSequenceFromAlgebraicDifferentialEquation(egfAdeqResult.v, egfAdeqResult.partition, egfTerms, n, bigIntMod, factorial);
+        const ogfExtended = extended.map((val, i) => (val * factorial[i]) % bigIntMod);
+        setEgfAlgebraicDifferentialEquationResult({
+          equation: generateAlgebraicDifferentialEquationString(egfAdeqResult, bigIntMod),
+          sequence: ogfExtended.map((val, i) => `${i}: ${val.toString()}`).join('\n'),
+        });
+      } else {
+        setEgfAlgebraicDifferentialEquationResult(null);
+        setEgfAlgebraicDifferentialEquationError('Error: Could not find algebraic differential equation for EGF.');
+      }
+    } catch (e: any) {
+      setEgfAlgebraicDifferentialEquationError('Error: ' + e.message);
     }
   };
 
@@ -167,6 +170,7 @@ export const useRecurrenceAnalysis = () => {
     sequence, setSequence,
     degree, setDegree,
     extendLength, setExtendLength,
+    mod, setMod,
     error, setError,
     polynomialRecurrenceError, setPolynomialRecurrenceError,
     algebraicRecurrenceError, setAlgebraicRecurrenceError,
@@ -178,7 +182,6 @@ export const useRecurrenceAnalysis = () => {
     algebraicDifferentialEquationError, setAlgebraicDifferentialEquationError,
     egfAlgebraicDifferentialEquationResult, setEgfAlgebraicDifferentialEquationResult,
     egfAlgebraicDifferentialEquationError, setEgfAlgebraicDifferentialEquationError,
-    handleFindAll,
-    mod, setMod
+    handleFindAll
   };
 };

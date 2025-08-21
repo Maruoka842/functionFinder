@@ -8,8 +8,9 @@ def run_test(page: Page):
     sequence = "0, 1, 0, 2, 0, 14, 0, 204, 0, 5104, 0, 195040, 0, 570386, 0, 168983, 0, 671563, 0, 226455, 0, 272519, 0, 603129, 0, 298609, 0, 841256, 0, 663822, 0, 476977, 0, 574167, 0, 318955, 0, 57566, 0, 387157"
     degree = "3"
     extend_length = "20"
+    mod = "1000003"
 
-    url = f"http://localhost:5173/?sequence={sequence}&degree={degree}&extendLength={extend_length}"
+    url = f"http://localhost:5173/?sequence={sequence}&degree={degree}&extendLength={extend_length}&mod={mod}"
     page.goto(url)
 
     # 2. Act: Click the button to trigger the calculation.
@@ -28,5 +29,25 @@ if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        run_test(page)
-        browser.close()
+
+        # Start the dev server
+        import subprocess
+        import atexit
+
+        server = subprocess.Popen(["npm", "run", "dev"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        atexit.register(server.kill)
+
+        # Wait for the server to be ready
+        import time
+        time.sleep(5)
+
+        try:
+            run_test(page)
+            print("Verification successful!")
+        except Exception as e:
+            print(f"Verification failed: {e}")
+            # Capture a screenshot on failure
+            page.screenshot(path="jules-scratch/verification/bug_repro_failure.png")
+            exit(1)
+        finally:
+            browser.close()
