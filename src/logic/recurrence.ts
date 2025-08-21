@@ -91,7 +91,7 @@ function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
         break;
       }
     }
-    if (pivot === -1) break;
+    if (pivot === -1) continue;
 
     if (pivot !== rank) {
       [mat[rank], mat[pivot]] = [mat[pivot], mat[rank]];
