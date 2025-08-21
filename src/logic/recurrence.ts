@@ -31,7 +31,7 @@ function comb(n: bigint, k: bigint, mod: bigint, factorial: bigint[]): bigint {
 function normalizeCoefficients(coeffs: bigint[][], mod: bigint): bigint[][] {
   let normalizer = 1n;
   let ABS = mod;
-  for (let a = 1n; a < 100n; ++a) {
+  for (let a = 1n; a < Math.min(100, Number(mod)); ++a) {
     let nABS = 0n;
     for (let i = 0; i < coeffs.length; ++i) {
       for (let j = 0; j < coeffs[i].length; ++j) {
@@ -58,7 +58,6 @@ function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
   const B = Math.floor((n + 2) / (deg + 2));
   const C = B * (deg + 1);
   const R = n - (B - 1);
-
   if (B < 2 || R < C - 1) {
     throw new Error("Could not find polynomial recurrence.");
   }
@@ -102,41 +101,31 @@ function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
       mat[rank][x2] = (mat[rank][x2] * inv) % mod;
     }
 
-    for (let y = rank + 1; y < R; ++y) {
+    for (let y = 0; y < R; ++y) {
+      if (y == rank) continue;
       if (mat[y][x] === 0n) continue;
       const coeff = mod - mat[y][x];
       for (let x2 = x; x2 < C; ++x2) {
         mat[y][x2] = (mat[y][x2] + coeff * mat[rank][x2]) % mod;
       }
     }
-
     ++rank;
   }
   if (rank === C) {
     throw new Error("Could not find polynomial recurrence.");
   }
 
-  for (let y = rank - 1; y >= 0; --y) {
-    if (mat[y][rank] === 0n) continue;
-    if (mat[y][y] !== 1n) throw new Error("mat[y][y] must be 1");
-    const c = (mod - mat[y][rank]) % mod;
-    for (let y2 = 0; y2 < y; ++y2) {
-      mat[y2][rank] = (mat[y2][rank] + c * mat[y2][y]) % mod;
-    }
-  }
 
   const order = Math.floor(rank / (deg + 1));
   const ret: bigint[][] = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0n));
   ret[0][rank % (deg + 1)] = 1n;
-
   for (let y = rank - 1; y >= 0; --y) {
     const k = order - Math.floor(y / (deg + 1));
     const d = y % (deg + 1);
     ret[k][d] = (mod - mat[y][rank]) % mod;
   }
-
   normalizeCoefficients(ret, mod);
-
+  
   return {
     coeffs: ret,
     order,
@@ -313,9 +302,9 @@ export function analyzePolynomialRecurrence(n: number, terms: bigint[], degree: 
   }
   try {
     const relation = findPolynomialRecurrence(terms, degree, mod);
+
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
     const extended_terms = extendSequenceFromPolynomialRecurrence(n, coeffs, terms, mod);
-
     let info_string = `verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
 
     let result_string = `Extended Sequence:\n`;
