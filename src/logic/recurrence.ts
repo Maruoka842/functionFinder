@@ -28,10 +28,10 @@ function comb(n: bigint, k: bigint, mod: bigint, factorial: bigint[]): bigint {
   return (num * modInv(den, mod)) % mod;
 }
 
-function normalizeCoefficients(coeffs: bigint[][], mod: bigint): bigint[][] {
+function minimizeCoefficients(coeffs: bigint[][], mod: bigint): bigint[][] {
   let normalizer = 1n;
   let ABS = mod;
-  for (let a = 1n; a < 100n; ++a) {
+  for (let a = 1n; a < Math.min(100, Number(mod)); ++a) {
     let nABS = 0n;
     for (let i = 0; i < coeffs.length; ++i) {
       for (let j = 0; j < coeffs[i].length; ++j) {
@@ -53,28 +53,9 @@ function normalizeCoefficients(coeffs: bigint[][], mod: bigint): bigint[][] {
   return coeffs;
 }
 
-function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
-  const n = terms.length;
-  const B = Math.floor((n + 2) / (deg + 2));
-  const C = B * (deg + 1);
-  const R = n - (B - 1);
 
-  if (B < 2 || R < C - 1) {
-    throw new Error("Could not find polynomial recurrence.");
-  }
-
-  let mat: bigint[][] = Array.from({ length: R }, () => Array(C).fill(0n));
-  for (let y = 0; y < R; ++y) {
-    for (let b = 0; b < B; ++b) {
-      let v = ((terms[y + b] % mod) + mod) % mod;
-      for (let d = 0; d <= deg; ++d) {
-        mat[y][b * (deg + 1) + d] = v;
-        v = (v * BigInt(y + b)) % mod;
-      }
-    }
-  }
-
-  let rank = 0;
+function rowReducedEchelonForm(mat: bigint[][], mod: bigint) {
+    let rank = 0;
   const invCache = new Map<bigint, bigint>();
   const getInv = (val: bigint) => {
     if (!invCache.has(val)) {
@@ -82,7 +63,8 @@ function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
     }
     return invCache.get(val)!;
   };
-
+  let R = mat.length;
+  let C = mat[0].length;
   for (let x = 0; x < C; ++x) {
     let pivot = -1;
     for (let y = rank; y < R; ++y) {
@@ -102,41 +84,56 @@ function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
       mat[rank][x2] = (mat[rank][x2] * inv) % mod;
     }
 
-    for (let y = rank + 1; y < R; ++y) {
+    for (let y = 0; y < R; ++y) {
+      if (y == rank) continue;
       if (mat[y][x] === 0n) continue;
       const coeff = mod - mat[y][x];
       for (let x2 = x; x2 < C; ++x2) {
         mat[y][x2] = (mat[y][x2] + coeff * mat[rank][x2]) % mod;
       }
     }
-
     ++rank;
   }
+  return rank;
+}
+
+
+function findPolynomialRecurrence(terms: bigint[], deg: number, mod: bigint) {
+  const n = terms.length;
+  const B = Math.floor((n + 2) / (deg + 2));
+  const C = B * (deg + 1);
+  const R = n - (B - 1);
+  if (B < 2 || R < C - 1) {
+    throw new Error("Could not find polynomial recurrence.");
+  }
+
+  let mat: bigint[][] = Array.from({ length: R }, () => Array(C).fill(0n));
+  for (let y = 0; y < R; ++y) {
+    for (let b = 0; b < B; ++b) {
+      let v = ((terms[y + b] % mod) + mod) % mod;
+      for (let d = 0; d <= deg; ++d) {
+        mat[y][b * (deg + 1) + d] = v;
+        v = (v * BigInt(y + b)) % mod;
+      }
+    }
+  }
+
+  let rank = rowReducedEchelonForm(mat, mod);
   if (rank === C) {
     throw new Error("Could not find polynomial recurrence.");
   }
 
-  for (let y = rank - 1; y >= 0; --y) {
-    if (mat[y][rank] === 0n) continue;
-    if (mat[y][y] !== 1n) throw new Error("mat[y][y] must be 1");
-    const c = (mod - mat[y][rank]) % mod;
-    for (let y2 = 0; y2 < y; ++y2) {
-      mat[y2][rank] = (mat[y2][rank] + c * mat[y2][y]) % mod;
-    }
-  }
 
   const order = Math.floor(rank / (deg + 1));
   const ret: bigint[][] = Array.from({ length: order + 1 }, () => Array(deg + 1).fill(0n));
   ret[0][rank % (deg + 1)] = 1n;
-
   for (let y = rank - 1; y >= 0; --y) {
     const k = order - Math.floor(y / (deg + 1));
     const d = y % (deg + 1);
     ret[k][d] = (mod - mat[y][rank]) % mod;
   }
-
-  normalizeCoefficients(ret, mod);
-
+  minimizeCoefficients(ret, mod);
+  
   return {
     coeffs: ret,
     order,
@@ -198,26 +195,7 @@ export function findAlgebraicDifferentialEquation(sequence: bigint[], K: number,
     return invCache.get(val)!;
   };
 
-  const used: boolean[] = Array(N).fill(false);
-  for (let i = 0; i < mat[0].length; i++) {
-    let pivot = 0;
-    while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0n))
-      pivot++;
-    if (pivot === mat.length) {
-      continue;
-    }
-    used[pivot] = true;
-
-    for (let np = 0; np < mat.length; np++) {
-      if (np !== pivot && mat[np][i] !== 0n) {
-        const c = (mat[np][i] * getInv(mat[pivot][i])) % mod;
-        for (let j = 0; j < mat[np].length; j++) {
-          mat[np][j] = (mat[np][j] - (mat[pivot][j] * c) % mod + mod) % mod;
-        }
-      }
-    }
-  }
-
+  let rank = rowReducedEchelonForm(mat, mod);
   for (let i = 0; i < mat[0].length; i++) {
     let found = false;
     for (let j = 0; j < mat.length; j++) {
@@ -238,7 +216,7 @@ export function findAlgebraicDifferentialEquation(sequence: bigint[], K: number,
         v[ni] = (-mat[j][i] * getInv(mat[j][ni]) % mod + mod) % mod;
       }
     }
-    normalizeCoefficients([v], mod);
+    minimizeCoefficients([v], mod);
     return { partition, v };
   }
 
@@ -313,9 +291,9 @@ export function analyzePolynomialRecurrence(n: number, terms: bigint[], degree: 
   }
   try {
     const relation = findPolynomialRecurrence(terms, degree, mod);
+
     const { coeffs, order, deg, last, nonTrivialTerms } = relation;
     const extended_terms = extendSequenceFromPolynomialRecurrence(n, coeffs, terms, mod);
-
     let info_string = `verified up to a[${last}] (number of non-trivial terms: ${nonTrivialTerms})\n`;
 
     let result_string = `Extended Sequence:\n`;
@@ -525,21 +503,8 @@ export function findAlgebraicEquation(sequence: bigint[], D: number, mod: bigint
     return invCache.get(val)!;
   };
 
-  const used: boolean[] = Array(N).fill(false);
-  for (let i = 0; i < mat[0].length; ++i) {
-    let pivot = 0;
-    while (pivot < mat.length && (used[pivot] || mat[pivot][i] === 0n)) ++pivot;
-    if (pivot === mat.length) continue;
-    used[pivot] = true;
-    for (let npivot = 0; npivot < mat.length; ++npivot) {
-      if (mat[npivot][i] !== 0n && npivot !== pivot) {
-        const c = (mat[npivot][i] * getInv(mat[pivot][i])) % mod;
-        for (let j = 0; j < mat[npivot].length; ++j) {
-          mat[npivot][j] = (mat[npivot][j] - (mat[pivot][j] * c) % mod + mod) % mod;
-        }
-      }
-    }
-  }
+  let rank = rowReducedEchelonForm(mat, mod);
+
   for (let i = 0; i < mat[0].length; ++i) {
     let found = false;
     for (let j = 0; j < N; ++j) {
@@ -559,7 +524,7 @@ export function findAlgebraicEquation(sequence: bigint[], D: number, mod: bigint
         P[Math.floor(ni / (D + 1))][ni % (D + 1)] = (-mat[j][i] * getInv(mat[j][ni]) % mod + mod) % mod;
       }
     }
-    normalizeCoefficients(P, mod);
+    minimizeCoefficients(P, mod);
     return P;
   }
   throw new Error(`Could not find algebraic equation.`);
